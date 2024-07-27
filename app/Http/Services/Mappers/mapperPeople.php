@@ -8,7 +8,7 @@ use App\Models\RegionsAndPeoples;
 
 class mapperPeople
 {
-    public static function toPeople(RegionsAndPeoples $regionsAndPeoples)
+    public static function toPeople(RegionsAndPeoples $regionsAndPeoples): People
     {
         $people = new People(
             $regionsAndPeoples->id,
@@ -24,7 +24,7 @@ class mapperPeople
         return $people;
     }
 
-    public static function toRegionsAndPeoples(People $people)
+    public static function toRegionsAndPeoples(People $people): RegionsAndPeoples
     {
         $regionsAndPeoples = new RegionsAndPeoples(
             [

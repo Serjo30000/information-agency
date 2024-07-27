@@ -7,7 +7,7 @@ use App\Models\PeopleContent;
 
 class mapperOpinion
 {
-    public static function toOpinion(PeopleContent $peopleContent)
+    public static function toOpinion(PeopleContent $peopleContent): Opinion
     {
         $opinion = new Opinion(
             $peopleContent->id,
@@ -24,7 +24,7 @@ class mapperOpinion
         return $opinion;
     }
 
-    public static function toPeopleContent(Opinion $opinion)
+    public static function toPeopleContent(Opinion $opinion): PeopleContent
     {
         $peopleContent = new PeopleContent(
             [

@@ -7,7 +7,7 @@ use App\Models\PeopleContent;
 
 class mapperPointView
 {
-    public static function toPointView(PeopleContent $peopleContent)
+    public static function toPointView(PeopleContent $peopleContent): PointView
     {
         $pointView = new PointView(
             $peopleContent->id,
@@ -21,7 +21,7 @@ class mapperPointView
         return $pointView;
     }
 
-    public static function toPeopleContent(PointView $pointView)
+    public static function toPeopleContent(PointView $pointView): PeopleContent
     {
         $peopleContent = new PeopleContent(
             [

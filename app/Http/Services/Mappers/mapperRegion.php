@@ -9,7 +9,7 @@ use App\Models\RegionsAndPeoples;
 
 class mapperRegion
 {
-    public static function toRegion(RegionsAndPeoples $regionsAndPeoples)
+    public static function toRegion(RegionsAndPeoples $regionsAndPeoples): Region
     {
         $region = new Region(
             $regionsAndPeoples->id,
@@ -24,7 +24,7 @@ class mapperRegion
         return $region;
     }
 
-    public static function toRegionsAndPeoples(Region $region)
+    public static function toRegionsAndPeoples(Region $region): RegionsAndPeoples
     {
         $regionsAndPeoples = new RegionsAndPeoples(
             [

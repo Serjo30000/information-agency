@@ -7,7 +7,7 @@ use App\Models\PeopleContent;
 
 class mapperInterview
 {
-    public static function toInterview(PeopleContent $peopleContent)
+    public static function toInterview(PeopleContent $peopleContent): Interview
     {
         $interview = new Interview(
             $peopleContent->id,
@@ -24,7 +24,7 @@ class mapperInterview
         return $interview;
     }
 
-    public static function toPeopleContent(Interview $interview)
+    public static function toPeopleContent(Interview $interview): PeopleContent
     {
         $peopleContent = new PeopleContent(
             [
