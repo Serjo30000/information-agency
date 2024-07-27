@@ -6,7 +6,7 @@ use App\Models\DTO\People;
 use App\Models\DTO\Region;
 use App\Models\RegionsAndPeoples;
 
-class mapperPeople
+class MapperPeople
 {
     public static function toPeople(RegionsAndPeoples $regionsAndPeoples): People
     {

@@ -5,7 +5,7 @@ namespace App\Http\Services\Mappers;
 use App\Models\DTO\Opinion;
 use App\Models\PeopleContent;
 
-class mapperOpinion
+class MapperOpinion
 {
     public static function toOpinion(PeopleContent $peopleContent): Opinion
     {

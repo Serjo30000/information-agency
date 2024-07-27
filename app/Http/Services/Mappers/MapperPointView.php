@@ -5,7 +5,7 @@ namespace App\Http\Services\Mappers;
 use App\Models\DTO\PointView;
 use App\Models\PeopleContent;
 
-class mapperPointView
+class MapperPointView
 {
     public static function toPointView(PeopleContent $peopleContent): PointView
     {

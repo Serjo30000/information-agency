@@ -5,7 +5,7 @@ namespace App\Http\Services\Mappers;
 use App\Models\DTO\Interview;
 use App\Models\PeopleContent;
 
-class mapperInterview
+class MapperInterview
 {
     public static function toInterview(PeopleContent $peopleContent): Interview
     {
