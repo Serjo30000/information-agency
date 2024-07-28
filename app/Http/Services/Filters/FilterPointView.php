@@ -15,4 +15,11 @@ class FilterPointView
         });
         return $pointViews;
     }
+
+    public static function findPointViewByFilter($id)
+    {
+        $peopleContent = PeopleContent::where('type', 'PointView')->where('id', $id)->first();
+        $pointView = MapperPointView::toPointView($peopleContent);
+        return $pointView;
+    }
 }

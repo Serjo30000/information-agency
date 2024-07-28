@@ -13,4 +13,15 @@ class NewsController extends Controller
 
         return response()->json($news);
     }
+
+    public function findNewsOne($id){
+        $newsOne = News::find($id);
+
+        if ($newsOne){
+            return response()->json($newsOne);
+        }
+        else{
+            return response()->json(['message' => 'NewsOne not found'], 404);
+        }
+    }
 }

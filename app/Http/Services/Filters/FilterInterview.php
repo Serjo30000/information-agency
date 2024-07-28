@@ -15,4 +15,11 @@ class FilterInterview
         });
         return $interviews;
     }
+
+    public static function findInterviewByFilter($id)
+    {
+        $peopleContent = PeopleContent::where('type', 'Interview')->where('id', $id)->first();
+        $interview = MapperInterview::toInterview($peopleContent);
+        return $interview;
+    }
 }

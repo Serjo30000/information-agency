@@ -15,4 +15,11 @@ class FilterRegion
         });
         return $regions;
     }
+
+    public static function findRegionByFilter($id)
+    {
+        $regionAndPeople = RegionsAndPeoples::where('type', 'Region')->where('id', $id)->first();
+        $region = MapperRegion::toRegion($regionAndPeople);
+        return $region;
+    }
 }

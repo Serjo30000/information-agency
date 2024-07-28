@@ -15,4 +15,11 @@ class FilterOpinion
         });
         return $opinions;
     }
+
+    public static function findOpinionByFilter($id)
+    {
+        $peopleContent = PeopleContent::where('type', 'Opinion')->where('id', $id)->first();
+        $opinion = MapperOpinion::toOpinion($peopleContent);
+        return $opinion;
+    }
 }

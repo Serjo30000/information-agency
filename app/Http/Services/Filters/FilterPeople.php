@@ -15,4 +15,11 @@ class FilterPeople
         });
         return $peoples;
     }
+
+    public static function findPeopleByFilter($id)
+    {
+        $regionAndPeople = RegionsAndPeoples::where('type', 'People')->where('id', $id)->first();
+        $people = MapperPeople::toPeople($regionAndPeople);
+        return $people;
+    }
 }

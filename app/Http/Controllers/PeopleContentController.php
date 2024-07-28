@@ -17,11 +17,33 @@ class PeopleContentController extends Controller
         return response()->json($peopleContents);
     }
 
+    public function findPeopleContent($id){
+        $peopleContent = PeopleContent::find($id);
+
+        if ($peopleContent){
+            return response()->json($peopleContent);
+        }
+        else{
+            return response()->json(['message' => 'PeopleContent not found'], 404);
+        }
+    }
+
     public function allInterviews()
     {
         $interviews = FilterInterview::allInterviewsByFilter();
 
         return response()->json($interviews);
+    }
+
+    public function findInterview($id){
+        $interview = FilterInterview::findInterviewByFilter($id);
+
+        if ($interview){
+            return response()->json($interview);
+        }
+        else{
+            return response()->json(['message' => 'Interview not found'], 404);
+        }
     }
 
     public function allOpinions()
@@ -31,10 +53,32 @@ class PeopleContentController extends Controller
         return response()->json($opinions);
     }
 
+    public function findOpinion($id){
+        $opinion = FilterOpinion::findOpinionByFilter($id);
+
+        if ($opinion){
+            return response()->json($opinion);
+        }
+        else{
+            return response()->json(['message' => 'Opinion not found'], 404);
+        }
+    }
+
     public function allPointViews()
     {
         $pointViews = FilterPointView::allPointViewsByFilter();
 
         return response()->json($pointViews);
+    }
+
+    public function findPointView($id){
+        $pointView = FilterPointView::findPointViewByFilter($id);
+
+        if ($pointView){
+            return response()->json($pointView);
+        }
+        else{
+            return response()->json(['message' => 'PointView not found'], 404);
+        }
     }
 }
