@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('source')->nullable();
             $table->string('type');
             $table->timestamp('publication_date')->nullable();
-            $table->foreignId('regions_and_peoples_id')->constrained()->onDelete('cascade');
+            $table->foreignId('regions_and_peoples_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('status_id')->constrained()->onDelete('cascade');
             $table->timestamps();

@@ -61,7 +61,7 @@ class ReportController extends Controller
     public function allPriorityGrandNews(){
         $grandNews = GrandNews::all();
 
-        $topPriorityNews = $grandNews->sortByDesc('priority')->take(5);
+        $topPriorityNews = $grandNews->sortByDesc('priority')->all();
 
         return response()->json($topPriorityNews);
     }

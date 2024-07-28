@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Services\Filters\FilterPeople;
 use App\Http\Services\Filters\FilterRegion;
 use App\Models\RegionsAndPeoples;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class RegionsAndPeoplesController extends Controller
 {
@@ -32,6 +34,42 @@ class RegionsAndPeoplesController extends Controller
         $peoples = FilterPeople::allPeoplesByFilter();
 
         return response()->json($peoples);
+    }
+
+    public function allPeoplesPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $peoples = collect(FilterPeople::allPeoplesByFilter());
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $peoples = $peoples->filter(function($people) use ($startDate) {
+                return Carbon::parse($people->publication_date)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $peoples = $peoples->filter(function($people) use ($endDate) {
+                return Carbon::parse($people->publication_date)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $peoples->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $peoples->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
     }
 
     public function findPeople($id){
