@@ -19,6 +19,9 @@ class FilterPointView
     public static function findPointViewByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'PointView')->where('id', $id)->first();
+        if (!$peopleContent){
+            return null;
+        }
         $pointView = MapperPointView::toPointView($peopleContent);
         return $pointView;
     }

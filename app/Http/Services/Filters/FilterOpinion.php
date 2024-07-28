@@ -19,6 +19,9 @@ class FilterOpinion
     public static function findOpinionByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'Opinion')->where('id', $id)->first();
+        if (!$peopleContent){
+            return null;
+        }
         $opinion = MapperOpinion::toOpinion($peopleContent);
         return $opinion;
     }

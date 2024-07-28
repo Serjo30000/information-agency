@@ -19,6 +19,9 @@ class FilterInterview
     public static function findInterviewByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'Interview')->where('id', $id)->first();
+        if (!$peopleContent){
+            return null;
+        }
         $interview = MapperInterview::toInterview($peopleContent);
         return $interview;
     }

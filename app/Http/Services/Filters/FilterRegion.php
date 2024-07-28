@@ -19,6 +19,9 @@ class FilterRegion
     public static function findRegionByFilter($id)
     {
         $regionAndPeople = RegionsAndPeoples::where('type', 'Region')->where('id', $id)->first();
+        if (!$regionAndPeople){
+            return null;
+        }
         $region = MapperRegion::toRegion($regionAndPeople);
         return $region;
     }
