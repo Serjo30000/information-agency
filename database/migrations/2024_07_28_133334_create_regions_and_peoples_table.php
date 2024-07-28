@@ -9,10 +9,17 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('regions_and_peoples', function (Blueprint $table) {
             $table->id();
+            $table->string('path_to_image')->nullable();
+            $table->string('position_or_type_region');
+            $table->string('fio_or_name_region');
+            $table->string('place_work')->nullable();
+            $table->text('content')->nullable();
+            $table->string('type');
+            $table->date('date_birth_or_date_foundation')->nullable();
             $table->timestamps();
         });
     }

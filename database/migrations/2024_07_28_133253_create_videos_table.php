@@ -9,10 +9,16 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('videos', function (Blueprint $table) {
             $table->id();
+            $table->string('path_to_video');
+            $table->string('title');
+            $table->string('source')->nullable();
+            $table->timestamp('publication_date')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('status_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
