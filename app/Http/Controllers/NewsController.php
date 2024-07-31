@@ -14,7 +14,7 @@ class NewsController extends Controller
     {
         $news = News::all();
 
-        return response()->json($news);
+        return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listNewsTopTenByRegion($id_region)
@@ -23,7 +23,7 @@ class NewsController extends Controller
         $region->getNews()->take(10);
         $news = News::all();
 
-        return response()->json($news);
+        return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allNewsPaginate(Request $request)
@@ -59,17 +59,17 @@ class NewsController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findNewsOne($id){
         $newsOne = News::find($id);
 
         if ($newsOne){
-            return response()->json($newsOne);
+            return response()->json($newsOne, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'NewsOne not found'], 404);
+            return response()->json(['message' => 'NewsOne not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

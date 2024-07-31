@@ -13,7 +13,7 @@ class StatusController extends Controller
     {
         $statuses = Status::all();
 
-        return response()->json($statuses);
+        return response()->json($statuses, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allStatusesPaginate(Request $request)
@@ -49,17 +49,17 @@ class StatusController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findStatus($id){
         $status = Status::find($id);
 
         if ($status){
-            return response()->json($status);
+            return response()->json($status, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'Status not found'], 404);
+            return response()->json(['message' => 'Status not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

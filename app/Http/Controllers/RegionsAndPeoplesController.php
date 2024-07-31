@@ -15,7 +15,7 @@ class RegionsAndPeoplesController extends Controller
     {
         $regionsAndPeoples = RegionsAndPeoples::all();
 
-        return response()->json($regionsAndPeoples);
+        return response()->json($regionsAndPeoples, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allRegionsAndPeoplesPaginate(Request $request)
@@ -51,17 +51,17 @@ class RegionsAndPeoplesController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findRegionAndPeople($id){
         $regionAndPeople = RegionsAndPeoples::find($id);
 
         if ($regionAndPeople){
-            return response()->json($regionAndPeople);
+            return response()->json($regionAndPeople, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'RegionAndPeople not found'], 404);
+            return response()->json(['message' => 'RegionAndPeople not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -69,7 +69,7 @@ class RegionsAndPeoplesController extends Controller
     {
         $peoples = FilterPeople::allPeoplesByFilter();
 
-        return response()->json($peoples);
+        return response()->json($peoples, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allPeoplesPaginate(Request $request)
@@ -105,17 +105,17 @@ class RegionsAndPeoplesController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findPeople($id){
         $people = FilterPeople::findPeopleByFilter($id);
 
         if ($people){
-            return response()->json($people);
+            return response()->json($people, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'People not found'], 404);
+            return response()->json(['message' => 'People not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -123,7 +123,21 @@ class RegionsAndPeoplesController extends Controller
     {
         $regions = FilterRegion::allRegionsByFilter();
 
-        return response()->json($regions);
+        return response()->json($regions, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function listRegionsBySearch(Request $request)
+    {
+        $searchTerm = $request->input('search');
+        $selectedRegions = $request->input('selected_regions', []);
+
+        $regions = FilterRegion::allRegionsByFilterAndSearch($searchTerm, $selectedRegions);
+
+        return response()->json([
+            'regions' => $regions,
+            'searchTerm' => $searchTerm,
+            'selectedRegions' => $selectedRegions,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allRegionsPaginate(Request $request)
@@ -159,17 +173,17 @@ class RegionsAndPeoplesController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findRegion($id){
         $region = FilterRegion::findRegionByFilter($id);
 
         if ($region){
-            return response()->json($region);
+            return response()->json($region, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'Region not found'], 404);
+            return response()->json(['message' => 'Region not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

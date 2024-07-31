@@ -14,21 +14,21 @@ class VideoController extends Controller
     {
         $videos = Video::all();
 
-        return response()->json($videos);
+        return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listVideosTopFour()
     {
         $videos = Video::take(4)->get();
 
-        return response()->json($videos);
+        return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listVideosTopTen()
     {
         $videos = Video::take(10)->get();
 
-        return response()->json($videos);
+        return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allVideosPaginate(Request $request)
@@ -64,17 +64,17 @@ class VideoController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findVideo($id){
         $video = Video::find($id);
 
         if ($video){
-            return response()->json($video);
+            return response()->json($video, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'Video not found'], 404);
+            return response()->json(['message' => 'Video not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

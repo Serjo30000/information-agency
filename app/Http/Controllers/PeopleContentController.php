@@ -16,7 +16,7 @@ class PeopleContentController extends Controller
     {
         $peopleContents = PeopleContent::all();
 
-        return response()->json($peopleContents);
+        return response()->json($peopleContents, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allPeopleContentsPaginate(Request $request)
@@ -52,17 +52,17 @@ class PeopleContentController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findPeopleContent($id){
         $peopleContent = PeopleContent::find($id);
 
         if ($peopleContent){
-            return response()->json($peopleContent);
+            return response()->json($peopleContent, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'PeopleContent not found'], 404);
+            return response()->json(['message' => 'PeopleContent not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -70,28 +70,28 @@ class PeopleContentController extends Controller
     {
         $interviews = FilterInterview::allInterviewsByFilter();
 
-        return response()->json($interviews);
+        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listInterviewsTopThree()
     {
         $interviews = FilterInterview::listInterviewsByFilterByTop(3);
 
-        return response()->json($interviews);
+        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listInterviewsTopFour()
     {
         $interviews = FilterInterview::listInterviewsByFilterByTop(4);
 
-        return response()->json($interviews);
+        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listInterviewsTopFourteen()
     {
         $interviews = FilterInterview::listInterviewsByFilterByTop(14);
 
-        return response()->json($interviews);
+        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allInterviewsPaginate(Request $request)
@@ -127,17 +127,17 @@ class PeopleContentController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findInterview($id){
         $interview = FilterInterview::findInterviewByFilter($id);
 
         if ($interview){
-            return response()->json($interview);
+            return response()->json($interview, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'Interview not found'], 404);
+            return response()->json(['message' => 'Interview not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -145,21 +145,21 @@ class PeopleContentController extends Controller
     {
         $opinions = FilterOpinion::allOpinionsByFilter();
 
-        return response()->json($opinions);
+        return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listOpinionsTopFour()
     {
         $opinions = FilterOpinion::listOpinionsByFilterByTop(4);
 
-        return response()->json($opinions);
+        return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listOpinionsTopFourteen()
     {
         $opinions = FilterOpinion::listOpinionsByFilterByTop(14);
 
-        return response()->json($opinions);
+        return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allOpinionsPaginate(Request $request)
@@ -195,17 +195,17 @@ class PeopleContentController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findOpinion($id){
         $opinion = FilterOpinion::findOpinionByFilter($id);
 
         if ($opinion){
-            return response()->json($opinion);
+            return response()->json($opinion, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'Opinion not found'], 404);
+            return response()->json(['message' => 'Opinion not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -213,14 +213,14 @@ class PeopleContentController extends Controller
     {
         $pointViews = FilterPointView::allPointViewsByFilter();
 
-        return response()->json($pointViews);
+        return response()->json($pointViews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listPointViewsTopFour()
     {
         $pointViews = FilterPointView::listPointViewsByFilterByTop(4);
 
-        return response()->json($pointViews);
+        return response()->json($pointViews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allPointViewsPaginate(Request $request)
@@ -256,17 +256,17 @@ class PeopleContentController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findPointView($id){
         $pointView = FilterPointView::findPointViewByFilter($id);
 
         if ($pointView){
-            return response()->json($pointView);
+            return response()->json($pointView, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'PointView not found'], 404);
+            return response()->json(['message' => 'PointView not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

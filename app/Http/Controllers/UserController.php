@@ -13,7 +13,7 @@ class UserController extends Controller
     {
         $users = User::all();
 
-        return response()->json($users);
+        return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allUsersPaginate(Request $request)
@@ -49,17 +49,17 @@ class UserController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findUser($id){
         $user = User::find($id);
 
         if ($user){
-            return response()->json($user);
+            return response()->json($user, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'User not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

@@ -60,6 +60,7 @@ Route::get('peoples', [RegionsAndPeoplesController::class, 'allPeoples']);
 Route::get('peoplesPaginate', [RegionsAndPeoplesController::class, 'allPeoplesPaginate']);
 Route::get('people/{id}', [RegionsAndPeoplesController::class, 'findPeople']);
 Route::get('regions', [RegionsAndPeoplesController::class, 'allRegions']);
+Route::get('regionsBySearch', [RegionsAndPeoplesController::class, 'listRegionsBySearch']);
 Route::get('region/{id}', [RegionsAndPeoplesController::class, 'findRegion']);
 Route::get('statuses', [StatusController::class, 'allStatuses']);
 Route::get('statusesPaginate', [StatusController::class, 'allStatusesPaginate']);

@@ -13,21 +13,21 @@ class GrandNewsController extends Controller
     {
         $grandNews = GrandNews::all();
 
-        return response()->json($grandNews);
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listGrandNewsTopFive()
     {
         $grandNews = GrandNews::take(5)->get();
 
-        return response()->json($grandNews);
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function listGrandNewsTopTwenty()
     {
         $grandNews = GrandNews::take(20)->get();
 
-        return response()->json($grandNews);
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allGrandNewsPaginate(Request $request)
@@ -63,17 +63,17 @@ class GrandNewsController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return response()->json($paginatedDTO);
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findGrandNewsOne($id){
         $grandNewsOne = GrandNews::find($id);
 
         if ($grandNewsOne){
-            return response()->json($grandNewsOne);
+            return response()->json($grandNewsOne, 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
-            return response()->json(['message' => 'GrandNewsOne not found'], 404);
+            return response()->json(['message' => 'GrandNewsOne not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

@@ -45,7 +45,7 @@ class ReportController extends Controller
         $region = FilterRegion::findRegionByFilter($randomIndexRegion);
 
         if (is_null($opinion) || is_null($people) || is_null($interview) || is_null($region)) {
-            return response()->json(['message' => 'Not Found'], 404);
+            return response()->json(['message' => 'Not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
         $result = [
@@ -55,7 +55,7 @@ class ReportController extends Controller
             'region' => $region,
         ];
 
-        return response()->json($result);
+        return response()->json($result, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allPriorityGrandNews(){
@@ -63,6 +63,6 @@ class ReportController extends Controller
 
         $topPriorityNews = $grandNews->sortByDesc('priority')->all();
 
-        return response()->json($topPriorityNews);
+        return response()->json($topPriorityNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

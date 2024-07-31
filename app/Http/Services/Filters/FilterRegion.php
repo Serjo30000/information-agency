@@ -16,6 +16,34 @@ class FilterRegion
         return $regions;
     }
 
+    public static function allRegionsByFilterAndSearch($searchTerm = null, $selectedRegions = [])
+    {
+        $query = RegionsAndPeoples::where('type', 'Region');
+
+        if ($searchTerm) {
+            $query->where('fio_or_name_region', 'LIKE', '%' . $searchTerm . '%');
+        }
+
+        $regionsAndPeoples = $query->get();
+
+        if (!empty($selectedRegions)) {
+            $selectedRegionsAndPeoples = RegionsAndPeoples::where('type', 'Region')
+                ->whereIn('id', $selectedRegions)
+                ->get();
+            $regionsAndPeoples = $regionsAndPeoples->merge($selectedRegionsAndPeoples);
+        }
+
+        $regions = $regionsAndPeoples->map(function ($regionsAndPeople) use ($selectedRegions) {
+            $region = MapperRegion::toRegion($regionsAndPeople);
+            $region->selected = in_array($region->id, $selectedRegions);
+            return $region;
+        });
+
+        $regions = $regions->unique('id')->values();
+
+        return $regions;
+    }
+
     public static function listRegionsByFilterByTop($count)
     {
         $regionsAndPeoples = RegionsAndPeoples::where('type', 'Region')->take($count)->get();
