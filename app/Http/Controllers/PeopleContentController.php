@@ -19,6 +19,42 @@ class PeopleContentController extends Controller
         return response()->json($peopleContents);
     }
 
+    public function allPeopleContentsPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $peopleContents = PeopleContent::all();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $peopleContents = $peopleContents->filter(function($peopleContent) use ($startDate) {
+                return Carbon::parse($peopleContent->publication_date)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $peopleContents = $peopleContents->filter(function($peopleContent) use ($endDate) {
+                return Carbon::parse($peopleContent->publication_date)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $peopleContents->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $peopleContents->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
+    }
+
     public function findPeopleContent($id){
         $peopleContent = PeopleContent::find($id);
 
@@ -143,6 +179,42 @@ class PeopleContentController extends Controller
         $pointViews = FilterPointView::allPointViewsByFilter();
 
         return response()->json($pointViews);
+    }
+
+    public function allPointViewsPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $pointViews = collect(FilterPointView::allPointViewsByFilter());
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $pointViews = $pointViews->filter(function($pointView) use ($startDate) {
+                return Carbon::parse($pointView->created_at)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $pointViews = $pointViews->filter(function($pointView) use ($endDate) {
+                return Carbon::parse($pointView->created_at)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $pointViews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $pointViews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
     }
 
     public function findPointView($id){

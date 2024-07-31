@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserController extends Controller
 {
@@ -12,6 +14,42 @@ class UserController extends Controller
         $users = User::all();
 
         return response()->json($users);
+    }
+
+    public function allUsersPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $users = User::all();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $users = $users->filter(function($user) use ($startDate) {
+                return Carbon::parse($user->created_at)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $users = $users->filter(function($user) use ($endDate) {
+                return Carbon::parse($user->created_at)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $users->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $users->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
     }
 
     public function findUser($id){

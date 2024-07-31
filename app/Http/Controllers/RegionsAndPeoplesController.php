@@ -18,6 +18,42 @@ class RegionsAndPeoplesController extends Controller
         return response()->json($regionsAndPeoples);
     }
 
+    public function allRegionsAndPeoplesPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $regionsAndPeoples = RegionsAndPeoples::all();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $regionsAndPeoples = $regionsAndPeoples->filter(function($regionAndPeople) use ($startDate) {
+                return Carbon::parse($regionAndPeople->date_birth_or_date_foundation)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $regionsAndPeoples = $regionsAndPeoples->filter(function($regionAndPeople) use ($endDate) {
+                return Carbon::parse($regionAndPeople->date_birth_or_date_foundation)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $regionsAndPeoples->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $regionsAndPeoples->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
+    }
+
     public function findRegionAndPeople($id){
         $regionAndPeople = RegionsAndPeoples::find($id);
 
@@ -47,14 +83,14 @@ class RegionsAndPeoplesController extends Controller
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
             $peoples = $peoples->filter(function($people) use ($startDate) {
-                return Carbon::parse($people->publication_date)->greaterThanOrEqualTo($startDate);
+                return Carbon::parse($people->date_birth)->greaterThanOrEqualTo($startDate);
             });
         }
 
         if ($endDate) {
             $endDate = Carbon::parse($endDate)->endOfDay();
             $peoples = $peoples->filter(function($people) use ($endDate) {
-                return Carbon::parse($people->publication_date)->lessThanOrEqualTo($endDate);
+                return Carbon::parse($people->date_birth)->lessThanOrEqualTo($endDate);
             });
         }
 
@@ -88,6 +124,42 @@ class RegionsAndPeoplesController extends Controller
         $regions = FilterRegion::allRegionsByFilter();
 
         return response()->json($regions);
+    }
+
+    public function allRegionsPaginate(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $regions = collect(FilterRegion::allRegionsByFilter());
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $regions = $regions->filter(function($region) use ($startDate) {
+                return Carbon::parse($region->date_foundation)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $regions = $regions->filter(function($region) use ($endDate) {
+                return Carbon::parse($region->date_foundation)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $regions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $regions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO);
     }
 
     public function findRegion($id){
