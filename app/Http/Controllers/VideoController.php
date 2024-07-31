@@ -17,6 +17,20 @@ class VideoController extends Controller
         return response()->json($videos);
     }
 
+    public function listVideosTopFour()
+    {
+        $videos = Video::take(4)->get();
+
+        return response()->json($videos);
+    }
+
+    public function listVideosTopTen()
+    {
+        $videos = Video::take(10)->get();
+
+        return response()->json($videos);
+    }
+
     public function allVideosPaginate(Request $request)
     {
         $perPage = $request->input('per_page', 10);

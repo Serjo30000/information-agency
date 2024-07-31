@@ -37,13 +37,10 @@ class Region
         return $this->peopleContents;
     }
 
-    private function loadNews()
-    {
-        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
-    }
-
     public function getNews()
     {
+        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+
         return $this->news;
     }
 }

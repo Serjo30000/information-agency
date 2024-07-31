@@ -73,6 +73,27 @@ class PeopleContentController extends Controller
         return response()->json($interviews);
     }
 
+    public function listInterviewsTopThree()
+    {
+        $interviews = FilterInterview::listInterviewsByFilterByTop(3);
+
+        return response()->json($interviews);
+    }
+
+    public function listInterviewsTopFour()
+    {
+        $interviews = FilterInterview::listInterviewsByFilterByTop(4);
+
+        return response()->json($interviews);
+    }
+
+    public function listInterviewsTopFourteen()
+    {
+        $interviews = FilterInterview::listInterviewsByFilterByTop(14);
+
+        return response()->json($interviews);
+    }
+
     public function allInterviewsPaginate(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -127,6 +148,20 @@ class PeopleContentController extends Controller
         return response()->json($opinions);
     }
 
+    public function listOpinionsTopFour()
+    {
+        $opinions = FilterOpinion::listOpinionsByFilterByTop(4);
+
+        return response()->json($opinions);
+    }
+
+    public function listOpinionsTopFourteen()
+    {
+        $opinions = FilterOpinion::listOpinionsByFilterByTop(14);
+
+        return response()->json($opinions);
+    }
+
     public function allOpinionsPaginate(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -177,6 +212,13 @@ class PeopleContentController extends Controller
     public function allPointViews()
     {
         $pointViews = FilterPointView::allPointViewsByFilter();
+
+        return response()->json($pointViews);
+    }
+
+    public function listPointViewsTopFour()
+    {
+        $pointViews = FilterPointView::listPointViewsByFilterByTop(4);
 
         return response()->json($pointViews);
     }

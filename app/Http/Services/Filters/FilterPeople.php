@@ -16,6 +16,15 @@ class FilterPeople
         return $peoples;
     }
 
+    public static function listPeoplesByFilterByTop($count)
+    {
+        $regionsAndPeoples = RegionsAndPeoples::where('type', 'People')->take($count)->get();
+        $peoples = $regionsAndPeoples->map(function ($regionsAndPeople) {
+            return MapperPeople::toPeople($regionsAndPeople);
+        });
+        return $peoples;
+    }
+
     public static function findPeopleByFilter($id)
     {
         $regionAndPeople = RegionsAndPeoples::where('type', 'People')->where('id', $id)->first();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Services\Filters\FilterRegion;
 use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -11,6 +12,15 @@ class NewsController extends Controller
 {
     public function allNews()
     {
+        $news = News::all();
+
+        return response()->json($news);
+    }
+
+    public function listNewsTopTenByRegion($id_region)
+    {
+        $region = FilterRegion::findRegionByFilter($id_region);
+        $region->getNews()->take(10);
         $news = News::all();
 
         return response()->json($news);

@@ -16,6 +16,15 @@ class FilterOpinion
         return $opinions;
     }
 
+    public static function listOpinionsByFilterByTop($count)
+    {
+        $peopleContents = PeopleContent::where('type', 'Opinion')->take($count)->get();
+        $opinions = $peopleContents->map(function ($peopleContent) {
+            return MapperOpinion::toOpinion($peopleContent);
+        });
+        return $opinions;
+    }
+
     public static function findOpinionByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'Opinion')->where('id', $id)->first();

@@ -16,6 +16,15 @@ class FilterInterview
         return $interviews;
     }
 
+    public static function listInterviewsByFilterByTop($count)
+    {
+        $peopleContents = PeopleContent::where('type', 'Interview')->take($count)->get();
+        $interviews = $peopleContents->map(function ($peopleContent) {
+            return MapperInterview::toInterview($peopleContent);
+        });
+        return $interviews;
+    }
+
     public static function findInterviewByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'Interview')->where('id', $id)->first();

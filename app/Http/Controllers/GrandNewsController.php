@@ -16,6 +16,20 @@ class GrandNewsController extends Controller
         return response()->json($grandNews);
     }
 
+    public function listGrandNewsTopFive()
+    {
+        $grandNews = GrandNews::take(5)->get();
+
+        return response()->json($grandNews);
+    }
+
+    public function listGrandNewsTopTwenty()
+    {
+        $grandNews = GrandNews::take(20)->get();
+
+        return response()->json($grandNews);
+    }
+
     public function allGrandNewsPaginate(Request $request)
     {
         $perPage = $request->input('per_page', 10);

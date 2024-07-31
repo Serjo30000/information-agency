@@ -16,6 +16,15 @@ class FilterRegion
         return $regions;
     }
 
+    public static function listRegionsByFilterByTop($count)
+    {
+        $regionsAndPeoples = RegionsAndPeoples::where('type', 'Region')->take($count)->get();
+        $regions = $regionsAndPeoples->map(function ($regionsAndPeople) {
+            return MapperRegion::toRegion($regionsAndPeople);
+        });
+        return $regions;
+    }
+
     public static function findRegionByFilter($id)
     {
         $regionAndPeople = RegionsAndPeoples::where('type', 'Region')->where('id', $id)->first();

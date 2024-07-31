@@ -29,23 +29,17 @@ class People
         $this->date_birth = $date_birth;
     }
 
-    private function loadPeopleContents()
-    {
-        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id)->get();
-    }
-
     public function getPeopleContents()
     {
-        return $this->peopleContents;
-    }
+        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id)->get();
 
-    private function loadNews()
-    {
-        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+        return $this->peopleContents;
     }
 
     public function getNews()
     {
+        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+
         return $this->news;
     }
 }

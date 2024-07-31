@@ -16,6 +16,15 @@ class FilterPointView
         return $pointViews;
     }
 
+    public static function listPointViewsByFilterByTop($count)
+    {
+        $peopleContents = PeopleContent::where('type', 'PointView')->take($count)->get();
+        $pointViews = $peopleContents->map(function ($peopleContent) {
+            return MapperPointView::toPointView($peopleContent);
+        });
+        return $pointViews;
+    }
+
     public static function findPointViewByFilter($id)
     {
         $peopleContent = PeopleContent::where('type', 'PointView')->where('id', $id)->first();

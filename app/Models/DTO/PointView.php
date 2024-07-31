@@ -29,39 +29,30 @@ class PointView
         $this->status_id = $status_id;
     }
 
-    private function loadUser()
+    public function getUser()
     {
         if ($this->user_id) {
             $this->user = User::find($this->user_id);
         }
-    }
 
-    private function loadStatus()
-    {
-        if ($this->status_id) {
-            $this->status = Status::find($this->status_id);
-        }
-    }
-
-    private function loadRegionsAndPeoples()
-    {
-        if ($this->regions_and_peoples_id) {
-            $this->regions_and_peoples = RegionsAndPeoples::find($this->regions_and_peoples_id);
-        }
-    }
-
-    public function getUser()
-    {
         return $this->user;
     }
 
     public function getStatus()
     {
+        if ($this->status_id) {
+            $this->status = Status::find($this->status_id);
+        }
+
         return $this->status;
     }
 
     public function getRegionsAndPeoples()
     {
+        if ($this->regions_and_peoples_id) {
+            $this->regions_and_peoples = RegionsAndPeoples::find($this->regions_and_peoples_id);
+        }
+
         return $this->regions_and_peoples;
     }
 }

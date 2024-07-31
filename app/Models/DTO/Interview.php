@@ -35,39 +35,30 @@ class Interview
         $this->status_id = $status_id;
     }
 
-    private function loadRegionsAndPeoples()
+    public function getRegionsAndPeoples()
     {
         if ($this->regions_and_peoples_id) {
             $this->regions_and_peoples = RegionsAndPeoples::find($this->regions_and_peoples_id);
         }
-    }
 
-    private function loadUser()
-    {
-        if ($this->user_id) {
-            $this->user = User::find($this->user_id);
-        }
-    }
-
-    private function loadStatus()
-    {
-        if ($this->status_id) {
-            $this->status = Status::find($this->status_id);
-        }
-    }
-
-    public function getRegionsAndPeoples()
-    {
         return $this->regions_and_peoples;
     }
 
     public function getUser()
     {
+        if ($this->user_id) {
+            $this->user = User::find($this->user_id);
+        }
+
         return $this->user;
     }
 
     public function getStatus()
     {
+        if ($this->status_id) {
+            $this->status = Status::find($this->status_id);
+        }
+
         return $this->status;
     }
 }
