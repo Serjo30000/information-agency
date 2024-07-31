@@ -2,6 +2,7 @@
 
 namespace App\Models\DTO;
 
+use App\Models\News;
 use App\Models\PeopleContent;
 
 class Region
@@ -14,6 +15,7 @@ class Region
     public $type;
     public $date_foundation;
     private $peopleContents;
+    private $news;
 
     public function __construct($id, $path_to_image, $type_region, $name_region, $content, $type, $date_foundation) {
         $this->id = $id;
@@ -23,8 +25,6 @@ class Region
         $this->content = $content;
         $this->type = $type;
         $this->date_foundation = $date_foundation;
-
-        $this->loadPeopleContents();
     }
 
     private function loadPeopleContents()
@@ -35,5 +35,15 @@ class Region
     public function getPeopleContents()
     {
         return $this->peopleContents;
+    }
+
+    private function loadNews()
+    {
+        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+    }
+
+    public function getNews()
+    {
+        return $this->news;
     }
 }

@@ -27,10 +27,6 @@ class PointView
         $this->type = $type;
         $this->user_id = $user_id;
         $this->status_id = $status_id;
-
-        $this->loadUser();
-        $this->loadStatus();
-        $this->loadRegionsAndPeoples();
     }
 
     private function loadUser()

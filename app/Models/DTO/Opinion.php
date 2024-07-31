@@ -31,10 +31,6 @@ class Opinion
         $this->regions_and_peoples_id = $regions_and_peoples_id;
         $this->user_id = $user_id;
         $this->status_id = $status_id;
-
-        $this->loadUser();
-        $this->loadStatus();
-        $this->loadRegionsAndPeoples();
     }
 
     private function loadUser()

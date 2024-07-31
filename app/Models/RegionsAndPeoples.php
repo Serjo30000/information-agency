@@ -28,4 +28,9 @@ class RegionsAndPeoples extends Model
     {
         return $this->hasMany(PeopleContent::class);
     }
+
+    public function news()
+    {
+        return $this->hasMany(News::class);
+    }
 }

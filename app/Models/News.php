@@ -18,6 +18,7 @@ class News extends Model
         'source',
         'publication_date',
         'user_id',
+        'regions_and_peoples_id',
         'status_id',
     ];
 
@@ -28,6 +29,11 @@ class News extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function regionsAndPeoples()
+    {
+        return $this->belongsTo(RegionsAndPeoples::class);
     }
 
     public function status()

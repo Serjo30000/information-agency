@@ -29,9 +29,6 @@ class Interview
         $this->publication_date = $publication_date;
         $this->user_id = $user_id;
         $this->status_id = $status_id;
-
-        $this->loadUser();
-        $this->loadStatus();
     }
 
     private function loadUser()
