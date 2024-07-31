@@ -32,6 +32,7 @@ Route::get('grandNewsTopTwenty', [GrandNewsController::class, 'listGrandNewsTopT
 Route::get('grandNewsPaginate', [GrandNewsController::class, 'allGrandNewsPaginate']);
 Route::get('grandNewsOne/{id}', [GrandNewsController::class, 'findGrandNewsOne']);
 Route::get('news', [NewsController::class, 'allNews']);
+Route::get('newsPaginateAndSearch', [NewsController::class, 'allNewsPaginateAndSearch']);
 Route::get('newsTopTenByRegion/{id_region}', [NewsController::class, 'listNewsTopTenByRegion']);
 Route::get('newsPaginate', [NewsController::class, 'allNewsPaginate']);
 Route::get('newsOne/{id}', [NewsController::class, 'findNewsOne']);
