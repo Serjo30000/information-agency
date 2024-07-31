@@ -14,6 +14,7 @@ class MapperPointView
             $peopleContent->title,
             $peopleContent->content,
             $peopleContent->type,
+            $peopleContent->regions_and_peoples_id,
             $peopleContent->user_id,
             $peopleContent->status_id,
         );
@@ -29,6 +30,7 @@ class MapperPointView
                 'title' => $pointView->title,
                 'content' => $pointView->content,
                 'type' => $pointView->type,
+                'regions_and_peoples_id' => $pointView->regions_and_peoples_id,
                 'user_id' => $pointView->user_id,
                 'status_id' => $pointView->status_id,
             ]

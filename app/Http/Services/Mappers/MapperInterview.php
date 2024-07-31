@@ -17,6 +17,7 @@ class MapperInterview
             $peopleContent->source,
             $peopleContent->type,
             $peopleContent->publication_date,
+            $peopleContent->regions_and_peoples_id,
             $peopleContent->user_id,
             $peopleContent->status_id,
         );
@@ -35,6 +36,7 @@ class MapperInterview
                 'source' => $interview->source,
                 'type' => $interview->type,
                 'publication_date' => $interview->publication_date,
+                'regions_and_peoples_id' => $interview->regions_and_peoples_id,
                 'user_id' => $interview->user_id,
                 'status_id' => $interview->status_id,
             ]
