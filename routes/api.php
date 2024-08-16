@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\GrandNewsController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PeopleContentController;
@@ -76,3 +77,7 @@ Route::get('videosPaginate', [VideoController::class, 'allVideosPaginate']);
 Route::get('video/{id}', [VideoController::class, 'findVideo']);
 Route::get('randomSections', [ReportController::class, 'allRandomSections']);
 Route::get('priorityGrandNews', [ReportController::class, 'allPriorityGrandNews']);
+
+Route::post('register', [AuthorizationController::class, 'register'])->middleware('role:admin');
+Route::post('logout', [AuthorizationController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('login', [AuthorizationController::class, 'login']);
