@@ -95,8 +95,9 @@ class AuthorizationController extends Controller
 
     public function logout(Request $request)
     {
-        $user = Auth::user();
-        if ($user->tokens()->count()>0){
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user != null && $user->tokens()->count()>0){
             $user->tokens()->delete();
         }
 
@@ -105,5 +106,23 @@ class AuthorizationController extends Controller
             'success' => true,
             'message' => 'Logged out successfully'
         ], 200);
+    }
+
+    public function checkAuth(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user != null) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User is authenticated',
+                'user' => Auth::guard('sanctum')->user()
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'User is not authenticated'
+        ], 401);
     }
 }

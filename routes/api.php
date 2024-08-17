@@ -78,6 +78,7 @@ Route::get('video/{id}', [VideoController::class, 'findVideo']);
 Route::get('randomSections', [ReportController::class, 'allRandomSections']);
 Route::get('priorityGrandNews', [ReportController::class, 'allPriorityGrandNews']);
 
-Route::post('register', [AuthorizationController::class, 'register'])->middleware('role:admin');
+Route::post('register', [AuthorizationController::class, 'register'])->middleware(['auth:sanctum', 'role:admin']);
 Route::post('logout', [AuthorizationController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('login', [AuthorizationController::class, 'login']);
+Route::post('login', [AuthorizationController::class, 'login'])->middleware('not.auth.user');
+Route::post('checkAuth', [AuthorizationController::class, 'checkAuth']);
