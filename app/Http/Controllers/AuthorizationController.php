@@ -24,7 +24,8 @@ class AuthorizationController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'fio' => 'required|string|max:255|two_or_three_words',
             'phone' => ['required', 'string', 'max:15', 'unique:users', new PhoneNumber],
-            'role' => 'required|string|exists:roles,name',
+            'roles' => 'required|array',
+            'roles.*' => 'string|exists:roles,name',
         ];
 
         try {
@@ -44,7 +45,7 @@ class AuthorizationController extends Controller
             'phone' => $request->input('phone'),
         ]);
 
-        $user->assignRole($request->input('role'));
+        $user->assignRole($request->input('roles'));
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

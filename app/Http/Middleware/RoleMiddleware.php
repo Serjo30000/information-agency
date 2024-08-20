@@ -17,7 +17,7 @@ class RoleMiddleware
      * @param  string  $role
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = Auth::guard('sanctum')->user();
 
@@ -28,7 +28,7 @@ class RoleMiddleware
             ], 401);
         }
 
-        if ($user->hasRole($role)) {
+        if ($user->hasAllRoles($roles)) {
             return $next($request);
         }
 

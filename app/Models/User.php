@@ -66,4 +66,13 @@ class User extends Authenticatable
     {
         return $this->roles->contains('name', $role);
     }
+
+    public function hasAllRoles(array $roles)
+    {
+        $userRoles = $this->roles->pluck('name');
+
+        return collect($roles)->every(function ($role) use ($userRoles) {
+            return $userRoles->contains($role);
+        });
+    }
 }

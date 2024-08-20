@@ -29,7 +29,7 @@ class Region
 
     private function loadPeopleContents()
     {
-        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id)->get();
+        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id);
     }
 
     public function getPeopleContents()
@@ -39,7 +39,7 @@ class Region
 
     public function getNews()
     {
-        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+        $this->news = News::where('regions_and_peoples_id', $this->id);
 
         return $this->news;
     }

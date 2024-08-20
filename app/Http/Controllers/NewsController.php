@@ -13,7 +13,9 @@ class NewsController extends Controller
 {
     public function allNews()
     {
-        $news = News::all();
+        $news = News::whereHas('status', function ($query) {
+            $query->where('status', 'Опубликовано');
+        })->get();
 
         return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -21,8 +23,17 @@ class NewsController extends Controller
     public function listNewsTopTenByRegion($id_region)
     {
         $region = FilterRegion::findRegionByFilter($id_region);
-        $region->getNews()->take(10);
-        $news = News::all();
+
+        if (!$region) {
+            return response()->json(['message' => 'Region not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = $region->getNews()
+            ->whereHas('status', function ($query) {
+                $query->where('status', 'Опубликовано');
+            })
+            ->take(10)
+            ->get();
 
         return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -33,7 +44,9 @@ class NewsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $news = News::all();
+        $news = News::whereHas('status', function ($query) {
+            $query->where('status', 'Опубликовано');
+        })->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -73,7 +86,10 @@ class NewsController extends Controller
 
         $regionIds = RegionsAndPeoples::where('type', 'Region')->pluck('id')->toArray();
 
-        $news = News::whereIn('regions_and_peoples_id', $regionIds)->get();
+        $news = News::whereIn('regions_and_peoples_id', $regionIds)
+            ->whereHas('status', function ($query) {
+                $query->where('status', 'опубликовано');
+            })->get();
 
         if (!empty($selectedRegions)) {
             $news = $news->filter(function($newsOne) use ($selectedRegions) {
@@ -117,6 +133,67 @@ class NewsController extends Controller
     }
 
     public function findNewsOne($id){
+        $newsOne = News::where('id', $id)
+            ->whereHas('status', function ($query) {
+                $query->where('status', 'Опубликовано');
+            })
+            ->first();
+
+        if ($newsOne){
+            return response()->json($newsOne, 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json(['message' => 'NewsOne not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+
+
+
+    public function allNewsForPanel()
+    {
+        $news = News::all();
+
+        return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allNewsPaginateForPanel(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $news = News::all();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $news = $news->filter(function($newsOne) use ($startDate) {
+                return Carbon::parse($newsOne->publication_date)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $news = $news->filter(function($newsOne) use ($endDate) {
+                return Carbon::parse($newsOne->publication_date)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $news->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function findNewsOneForPanel($id){
         $newsOne = News::find($id);
 
         if ($newsOne){

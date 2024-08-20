@@ -31,14 +31,14 @@ class People
 
     public function getPeopleContents()
     {
-        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id)->get();
+        $this->peopleContents = PeopleContent::where('regions_and_peoples_id', $this->id);
 
         return $this->peopleContents;
     }
 
     public function getNews()
     {
-        $this->news = News::where('regions_and_peoples_id', $this->id)->get();
+        $this->news = News::where('regions_and_peoples_id', $this->id);
 
         return $this->news;
     }

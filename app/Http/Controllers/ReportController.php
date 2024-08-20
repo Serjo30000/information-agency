@@ -18,31 +18,36 @@ class ReportController extends Controller
         $randomIndexInterview = 0;
         $randomIndexRegion = 0;
 
-        $opinionsCount = count(FilterOpinion::allOpinionsByFilter());
-        $peoplesCount = count(FilterPeople::allPeoplesByFilter());
-        $interviewsCount = count(FilterInterview::allInterviewsByFilter());
-        $regionsCount = count(FilterRegion::allRegionsByFilter());
+        $opinions = FilterOpinion::allOpinionsByFilter();
+        $peoples = FilterPeople::allPeoplesByFilter();
+        $interviews = FilterInterview::allInterviewsByFilter();
+        $regions = FilterRegion::allRegionsByFilter();
+
+        $opinionsCount = count($opinions);
+        $peoplesCount = count($peoples);
+        $interviewsCount = count($interviews);
+        $regionsCount = count($regions);
 
         if ($opinionsCount>0){
-            $randomIndexOpinion = rand(1, $opinionsCount);
+            $randomIndexOpinion = rand(0, $opinionsCount - 1);
         }
 
         if ($peoplesCount>0){
-            $randomIndexPeople = rand(1, $randomIndexPeople);
+            $randomIndexPeople = rand(0, $peoplesCount - 1);
         }
 
         if ($interviewsCount>0){
-            $randomIndexInterview = rand(1, $randomIndexInterview);
+            $randomIndexInterview = rand(0, $interviewsCount - 1);
         }
 
         if ($regionsCount>0){
-            $randomIndexRegion = rand(1, $randomIndexRegion);
+            $randomIndexRegion = rand(0, $regionsCount - 1);
         }
 
-        $opinion = FilterOpinion::findOpinionByFilter($randomIndexOpinion);
-        $people = FilterPeople::findPeopleByFilter($randomIndexPeople);
-        $interview = FilterInterview::findInterviewByFilter($randomIndexInterview);
-        $region = FilterRegion::findRegionByFilter($randomIndexRegion);
+        $opinion = $opinions->get($randomIndexOpinion);
+        $people = $peoples->get($randomIndexPeople);
+        $interview = $interviews->get($randomIndexInterview);
+        $region = $regions->get($randomIndexRegion);
 
         if (is_null($opinion) || is_null($people) || is_null($interview) || is_null($region)) {
             return response()->json(['message' => 'Not found'], 404, [], JSON_UNESCAPED_UNICODE);
@@ -59,7 +64,11 @@ class ReportController extends Controller
     }
 
     public function allPriorityGrandNews(){
-        $grandNews = GrandNews::all();
+        $grandNews = GrandNews::whereHas('news', function ($query) {
+            $query->whereHas('status', function ($statusQuery) {
+                $statusQuery->where('status', 'Опубликовано');
+            });
+        })->get();
 
         $topPriorityNews = $grandNews->sortByDesc('priority')->all();
 
