@@ -14,10 +14,6 @@ class StatusesTableSeeder extends Seeder
     public function run(): void
     {
         Status::create([
-            'order' => 0,
-            'status' => 'Создал',
-        ]);
-        Status::create([
             'order' => 1,
             'status' => 'Редактируется',
         ]);

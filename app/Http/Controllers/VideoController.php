@@ -186,7 +186,7 @@ class VideoController extends Controller
             ], 401);
         }
 
-        $status = Status::where('status', 'Создал')->first();
+        $status = Status::where('status', 'Редактируется')->first();
 
         if (!$status) {
             return response()->json([

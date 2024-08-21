@@ -208,7 +208,7 @@ class GrandNewsController extends Controller
 
         $status = Status::find($news->status_id);
 
-        if (!$status || !in_array($status->status, ['Создал', 'Редактируется'])) {
+        if (!$status || !in_array($status->status, ['Редактируется'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid status for the news'
