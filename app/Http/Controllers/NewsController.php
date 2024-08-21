@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Services\Filters\FilterRegion;
 use App\Models\News;
 use App\Models\RegionsAndPeoples;
+use App\Models\Status;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class NewsController extends Controller
 {
@@ -202,5 +205,64 @@ class NewsController extends Controller
         else{
             return response()->json(['message' => 'NewsOne not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function createNews(Request $request){
+        $rules = [
+            'path_to_image_or_video' => 'required|string|unique:news,path_to_image_or_video',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401);
+        }
+
+        $status = Status::where('status', 'Создал')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404);
+        }
+
+        $news = News::create([
+            'path_to_image_or_video' => $request->input('path_to_image_or_video'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'source' => $request->input('source'),
+            'publication_date' => $request->input('publication_date'),
+            'user_id' => $user->id,
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'status_id' => $status->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'news' => $news,
+            'message' => 'Create successful'
+        ], 201);
     }
 }

@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\GrandNews;
+use App\Models\News;
+use App\Models\Status;
+use App\Rules\DateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class GrandNewsController extends Controller
 {
@@ -154,5 +159,73 @@ class GrandNewsController extends Controller
         else{
             return response()->json(['message' => 'GrandNewsOne not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function createGrandNews(Request $request){
+        $rules = [
+            'start_publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'end_publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'priority' => 'required|integer|min:0',
+            'news_id' => 'required|integer|exists:news,id',
+        ];
+
+        $startDate = $request->input('start_publication_date');
+        $endDate = $request->input('end_publication_date');
+
+        $dateRangeRule = new DateRange($startDate, $endDate);
+
+        try {
+            $request->validate($rules);
+
+            if (!$dateRangeRule->passes('date_range', null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $dateRangeRule->message()
+                ], 422);
+            }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422);
+        }
+
+        $news = News::find($request->input('news_id'));
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404);
+        }
+
+        $status = Status::find($news->status_id);
+
+        if (!$status || !in_array($status->status, ['Создал', 'Редактируется'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid status for the news'
+            ], 400);
+        }
+
+        $grandNews = GrandNews::create([
+            'start_publication_date' => $request->input('start_publication_date'),
+            'end_publication_date' => $request->input('end_publication_date'),
+            'priority' => $request->input('priority'),
+            'news_id' => $request->input('news_id'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'grandNews' => $grandNews,
+            'message' => 'Create successful'
+        ], 201);
     }
 }

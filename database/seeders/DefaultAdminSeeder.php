@@ -18,6 +18,6 @@ class DefaultAdminSeeder extends Seeder
             'phone' => '89378031770',
         ]);
 
-        $user->assignRole('admin');
+        $user->assignRole('guest', 'editor', 'deleter', 'admin', 'super_admin');
     }
 }

@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
+use App\Models\Status;
 use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class VideoController extends Controller
 {
@@ -151,5 +154,60 @@ class VideoController extends Controller
         else{
             return response()->json(['message' => 'Video not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function createVideo(Request $request){
+        $rules = [
+            'path_to_video' => 'required|string|unique:videos,path_to_video',
+            'title' => 'required|string',
+            'source' => 'required|string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401);
+        }
+
+        $status = Status::where('status', 'Создал')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404);
+        }
+
+        $video = Video::create([
+            'path_to_video' => $request->input('path_to_video'),
+            'title' => $request->input('title'),
+            'source' => $request->input('source'),
+            'publication_date' => $request->input('publication_date'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'video' => $video,
+            'message' => 'Create successful'
+        ], 201);
     }
 }

@@ -99,7 +99,11 @@ Route::get('videoForPanel/{id}', [VideoController::class, 'findVideoForPanel'])-
 Route::get('randomSections', [ReportController::class, 'allRandomSections']);
 Route::get('priorityGrandNews', [ReportController::class, 'allPriorityGrandNews']);
 
-Route::post('register', [AuthorizationController::class, 'register'])->middleware(['auth:sanctum', 'role:admin']);
+Route::post('register', [AuthorizationController::class, 'register'])->middleware(['auth:sanctum', 'role:super_admin']);
 Route::post('logout', [AuthorizationController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('login', [AuthorizationController::class, 'login'])->middleware('not.auth.user');
 Route::post('checkAuth', [AuthorizationController::class, 'checkAuth']);
+
+Route::post('createVideo', [VideoController::class, 'createVideo'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createNews', [NewsController::class, 'createNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createGrandNews', [GrandNewsController::class, 'createGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
