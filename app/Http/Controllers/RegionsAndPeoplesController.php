@@ -266,4 +266,54 @@ class RegionsAndPeoplesController extends Controller
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
+
+    public function deleteRegion($id){
+        $regionsAndPeoples = RegionsAndPeoples::find($id);
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RegionsAndPeoples not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Region not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Region deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deletePeople($id){
+        $regionsAndPeoples = RegionsAndPeoples::find($id);
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RegionsAndPeoples not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People'){
+            return response()->json([
+                'success' => false,
+                'message' => 'People not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'People deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
 }

@@ -6,6 +6,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -60,6 +61,56 @@ class UserController extends Controller
         }
         else{
             return response()->json(['message' => 'User not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function deleteUser($id){
+        $userAuth = Auth::guard('sanctum')->user();
+
+        if (!$userAuth) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($userAuth->hasRole('admin') && !$userAuth->hasRole('super_admin')){
+            if ($user->hasAnyRoles(['admin', 'super_admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete user with admin or super_admin role'
+                ], 403, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully'
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else if ($userAuth->hasRole('super_admin')){
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully'
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete user'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }

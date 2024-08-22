@@ -75,4 +75,17 @@ class User extends Authenticatable
             return $userRoles->contains($role);
         });
     }
+
+    public function hasAnyRoles($roles)
+    {
+        $userRoles = $this->roles->pluck('name');
+
+        if (is_array($roles)) {
+            return collect($roles)->some(function ($role) use ($userRoles) {
+                return $userRoles->contains($role);
+            });
+        }
+
+        return $userRoles->contains($roles);
+    }
 }

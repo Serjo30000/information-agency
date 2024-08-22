@@ -725,4 +725,79 @@ class PeopleContentController extends Controller
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
+
+    public function deleteInterview($id){
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Interview'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Interview deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deleteOpinion($id){
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Opinion'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Opinion not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Opinion deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deletePointView($id){
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'PointView'){
+            return response()->json([
+                'success' => false,
+                'message' => 'PointView not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PointView deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
 }

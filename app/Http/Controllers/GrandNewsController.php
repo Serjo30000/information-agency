@@ -228,4 +228,22 @@ class GrandNewsController extends Controller
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
+
+    public function deleteGrandNews($id){
+        $grandNews = GrandNews::find($id);
+
+        if (!$grandNews) {
+            return response()->json([
+                'success' => false,
+                'message' => 'GrandNews not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'GrandNews deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
 }

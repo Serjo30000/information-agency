@@ -210,4 +210,22 @@ class VideoController extends Controller
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
+
+    public function deleteVideo($id){
+        $video = Video::find($id);
+
+        if (!$video) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Video not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $video->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Video deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
 }

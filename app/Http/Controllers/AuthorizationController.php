@@ -122,4 +122,15 @@ class AuthorizationController extends Controller
             'message' => 'User is not authenticated'
         ], 401);
     }
+
+    public function findAccount(){
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user == null){
+            return response()->json(['message' => 'User not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json($user, 200, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
 }
