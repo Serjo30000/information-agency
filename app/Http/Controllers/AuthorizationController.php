@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Rules\FullName;
 use App\Rules\PhoneNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,15 +15,10 @@ class AuthorizationController extends Controller
 {
     public function register(Request $request)
     {
-        Validator::extend('two_or_three_words', function ($attribute, $value, $parameters, $validator) {
-            $wordCount = str_word_count($value);
-            return $wordCount === 2 || $wordCount === 3;
-        });
-
         $rules = [
             'login' => 'required|string|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'fio' => 'required|string|max:255|two_or_three_words',
+            'fio' => ['required','string','max:255',new FullName()],
             'phone' => ['required', 'string', 'max:15', 'unique:users', new PhoneNumber],
             'roles' => 'required|array',
             'roles.*' => 'string|exists:roles,name',

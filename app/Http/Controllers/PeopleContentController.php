@@ -5,10 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Services\Filters\FilterInterview;
 use App\Http\Services\Filters\FilterOpinion;
 use App\Http\Services\Filters\FilterPointView;
+use App\Http\Services\Mappers\MapperInterview;
+use App\Http\Services\Mappers\MapperOpinion;
+use App\Http\Services\Mappers\MapperPointView;
 use App\Models\PeopleContent;
+use App\Models\RegionsAndPeoples;
+use App\Models\Status;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class PeopleContentController extends Controller
 {
@@ -503,5 +510,219 @@ class PeopleContentController extends Controller
         else{
             return response()->json(['message' => 'PointView not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function createInterview(Request $request){
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Редактируется')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'source' => $request->input('source'),
+            'type' => "Interview",
+            'publication_date' => $request->input('publication_date'),
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $interview = MapperInterview::toInterview($peopleContent);
+
+        return response()->json([
+            'success' => true,
+            'interview' => $interview,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createOpinion(Request $request){
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Редактируется')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'type' => "Opinion",
+            'publication_date' => $request->input('publication_date'),
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $opinion = MapperOpinion::toOpinion($peopleContent);
+
+        return response()->json([
+            'success' => true,
+            'opinion' => $opinion,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createPointView(Request $request){
+        $rules = [
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Редактируется')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'type' => "PointView",
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $pointView = MapperPointView::toPointView($peopleContent);
+
+        return response()->json([
+            'success' => true,
+            'pointView' => $pointView,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 }

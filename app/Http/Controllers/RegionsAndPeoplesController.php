@@ -4,10 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Services\Filters\FilterPeople;
 use App\Http\Services\Filters\FilterRegion;
+use App\Http\Services\Mappers\MapperPeople;
+use App\Http\Services\Mappers\MapperRegion;
+use App\Models\DTO\Region;
 use App\Models\RegionsAndPeoples;
+use App\Rules\FullName;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class RegionsAndPeoplesController extends Controller
 {
@@ -185,5 +191,79 @@ class RegionsAndPeoplesController extends Controller
         else{
             return response()->json(['message' => 'Region not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function createRegion(Request $request){
+        $rules = [
+            'path_to_image' => 'required|string|unique:regions_and_peoples,path_to_image',
+            'type_region' => 'required|string',
+            'name_region' => 'required|string',
+            'content' => 'required|string',
+            'date_foundation' => 'required|date_format:Y-m-d',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'position_or_type_region' => $request->input('type_region'),
+            'fio_or_name_region' => $request->input('name_region'),
+            'content' => $request->input('content'),
+            'type' => "Region",
+            'date_birth_or_date_foundation' => $request->input('date_foundation'),
+        ]);
+
+        $region = MapperRegion::toRegion($regionsAndPeoples);
+
+        return response()->json([
+            'success' => true,
+            'region' => $region,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createPeople(Request $request){
+        $rules = [
+            'path_to_image' => 'required|string|unique:regions_and_peoples,path_to_image',
+            'position' => 'required|string',
+            'fio' => ['required','string','max:255',new FullName()],
+            'place_work' => 'required|string',
+            'content' => 'required|string',
+            'date_birth' => 'required|date_format:Y-m-d',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'position_or_type_region' => $request->input('position'),
+            'fio_or_name_region' => $request->input('fio'),
+            'place_work' => $request->input('place_work'),
+            'content' => $request->input('content'),
+            'type' => "People",
+            'date_birth_or_date_foundation' => $request->input('date_birth'),
+        ]);
+
+        $people = MapperPeople::toPeople($regionsAndPeoples);
+
+        return response()->json([
+            'success' => true,
+            'people' => $people,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 }

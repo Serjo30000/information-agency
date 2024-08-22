@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+//get
 Route::get('grandNews', [GrandNewsController::class, 'allGrandNews']);
 Route::get('grandNewsForPanel', [GrandNewsController::class, 'allGrandNewsForPanel'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('grandNewsTopFive', [GrandNewsController::class, 'listGrandNewsTopFive']);
@@ -80,6 +81,7 @@ Route::get('peoples', [RegionsAndPeoplesController::class, 'allPeoples']);
 Route::get('peoplesPaginate', [RegionsAndPeoplesController::class, 'allPeoplesPaginate']);
 Route::get('people/{id}', [RegionsAndPeoplesController::class, 'findPeople']);
 Route::get('regions', [RegionsAndPeoplesController::class, 'allRegions']);
+Route::get('regionsPaginate', [RegionsAndPeoplesController::class, 'allRegionsPaginate']);
 Route::get('regionsBySearch', [RegionsAndPeoplesController::class, 'listRegionsBySearch']);
 Route::get('region/{id}', [RegionsAndPeoplesController::class, 'findRegion']);
 Route::get('statuses', [StatusController::class, 'allStatuses'])->middleware(['auth:sanctum', 'role:guest']);
@@ -99,11 +101,18 @@ Route::get('videoForPanel/{id}', [VideoController::class, 'findVideoForPanel'])-
 Route::get('randomSections', [ReportController::class, 'allRandomSections']);
 Route::get('priorityGrandNews', [ReportController::class, 'allPriorityGrandNews']);
 
+//auth
 Route::post('register', [AuthorizationController::class, 'register'])->middleware(['auth:sanctum', 'role:super_admin']);
 Route::post('logout', [AuthorizationController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('login', [AuthorizationController::class, 'login'])->middleware('not.auth.user');
 Route::post('checkAuth', [AuthorizationController::class, 'checkAuth']);
 
+//create
 Route::post('createVideo', [VideoController::class, 'createVideo'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createNews', [NewsController::class, 'createNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createGrandNews', [GrandNewsController::class, 'createGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createRegion', [RegionsAndPeoplesController::class, 'createRegion'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createPeople', [RegionsAndPeoplesController::class, 'createPeople'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createInterview', [PeopleContentController::class, 'createInterview'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createOpinion', [PeopleContentController::class, 'createOpinion'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createPointView', [PeopleContentController::class, 'createPointView'])->middleware(['auth:sanctum', 'role:editor']);

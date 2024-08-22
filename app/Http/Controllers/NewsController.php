@@ -227,7 +227,23 @@ class NewsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed'
-            ], 422);
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "Region".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
         $user = Auth::guard('sanctum')->user();
@@ -236,7 +252,7 @@ class NewsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Not authenticated'
-            ], 401);
+            ], 401, [], JSON_UNESCAPED_UNICODE);
         }
 
         $status = Status::where('status', 'Редактируется')->first();
@@ -245,7 +261,7 @@ class NewsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Status not found'
-            ], 404);
+            ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
         $news = News::create([
@@ -263,6 +279,6 @@ class NewsController extends Controller
             'success' => true,
             'news' => $news,
             'message' => 'Create successful'
-        ], 201);
+        ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 }

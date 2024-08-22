@@ -174,7 +174,7 @@ class VideoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed'
-            ], 422);
+            ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
         $user = Auth::guard('sanctum')->user();
@@ -183,7 +183,7 @@ class VideoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Not authenticated'
-            ], 401);
+            ], 401, [], JSON_UNESCAPED_UNICODE);
         }
 
         $status = Status::where('status', 'Редактируется')->first();
@@ -192,7 +192,7 @@ class VideoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Status not found'
-            ], 404);
+            ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
         $video = Video::create([
@@ -208,6 +208,6 @@ class VideoController extends Controller
             'success' => true,
             'video' => $video,
             'message' => 'Create successful'
-        ], 201);
+        ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 }

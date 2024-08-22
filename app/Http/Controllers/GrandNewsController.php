@@ -189,13 +189,13 @@ class GrandNewsController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => $dateRangeRule->message()
-                ], 422);
+                ], 422, [], JSON_UNESCAPED_UNICODE);
             }
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed'
-            ], 422);
+            ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
         $news = News::find($request->input('news_id'));
@@ -203,7 +203,7 @@ class GrandNewsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'News not found'
-            ], 404);
+            ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
         $status = Status::find($news->status_id);
@@ -212,7 +212,7 @@ class GrandNewsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid status for the news'
-            ], 400);
+            ], 400, [], JSON_UNESCAPED_UNICODE);
         }
 
         $grandNews = GrandNews::create([
@@ -226,6 +226,6 @@ class GrandNewsController extends Controller
             'success' => true,
             'grandNews' => $grandNews,
             'message' => 'Create successful'
-        ], 201);
+        ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 }
