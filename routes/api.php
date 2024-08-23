@@ -144,3 +144,10 @@ Route::put('editOpinion/{id}', [PeopleContentController::class, 'editOpinion'])-
 Route::put('editPointView/{id}', [PeopleContentController::class, 'editPointView'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editUserForFields/{id}', [UserController::class, 'editUserForFields'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
 Route::put('editUserForRole/{id}', [UserController::class, 'editUserForRole'])->middleware(['auth:sanctum', 'role:super_admin']);
+
+//edit statuses
+Route::put('editVideoByStatus/{id}', [VideoController::class, 'editVideoByStatus'])->middleware(['auth:sanctum', 'any.role:editor,admin,super_admin']);
+Route::put('editNewsByStatus/{id}', [NewsController::class, 'editNewsByStatus'])->middleware(['auth:sanctum', 'any.role:editor,admin,super_admin']);
+Route::put('editInterviewByStatus/{id}', [PeopleContentController::class, 'editInterviewByStatus'])->middleware(['auth:sanctum', 'any.role:editor,admin,super_admin']);
+Route::put('editOpinionByStatus/{id}', [PeopleContentController::class, 'editOpinionByStatus'])->middleware(['auth:sanctum', 'any.role:editor,admin,super_admin']);
+Route::put('editPointViewByStatus/{id}', [PeopleContentController::class, 'editPointViewByStatus'])->middleware(['auth:sanctum', 'any.role:editor,admin,super_admin']);

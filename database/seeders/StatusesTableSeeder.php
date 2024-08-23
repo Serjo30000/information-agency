@@ -14,27 +14,27 @@ class StatusesTableSeeder extends Seeder
     public function run(): void
     {
         Status::create([
-            'order' => 1,
+            'order' => 0,
             'status' => 'Редактируется',
         ]);
         Status::create([
-            'order' => 2,
+            'order' => 0,
             'status' => 'Ожидает подтверждения',
         ]);
         Status::create([
-            'order' => 3,
+            'order' => 1,
             'status' => 'Ожидает публикации',
         ]);
         Status::create([
-            'order' => 4,
+            'order' => 1,
             'status' => 'Опубликовано',
         ]);
         Status::create([
-            'order' => 5,
+            'order' => 0,
             'status' => 'Снято с публикации',
         ]);
         Status::create([
-            'order' => 6,
+            'order' => 1,
             'status' => 'Заблокировано',
         ]);
     }

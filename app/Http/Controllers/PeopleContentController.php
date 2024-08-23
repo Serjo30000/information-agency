@@ -8,6 +8,7 @@ use App\Http\Services\Filters\FilterPointView;
 use App\Http\Services\Mappers\MapperInterview;
 use App\Http\Services\Mappers\MapperOpinion;
 use App\Http\Services\Mappers\MapperPointView;
+use App\Http\Services\StatusManagement\StatusMatcher;
 use App\Models\PeopleContent;
 use App\Models\RegionsAndPeoples;
 use App\Models\Status;
@@ -1075,6 +1076,312 @@ class PeopleContentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot edit pointView'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editInterviewByStatus($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Interview'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($peopleContent->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OldStatus not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $peopleContent->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($is_status){
+            $peopleContent->status_id = $status->id;
+
+            $peopleContent->save();
+
+            $interview = MapperInterview::toInterview($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully',
+                'interview' => $interview,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editOpinionByStatus($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Opinion'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Opinion not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($peopleContent->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OldStatus not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $peopleContent->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($is_status){
+            $peopleContent->status_id = $status->id;
+
+            $peopleContent->save();
+
+            $opinion = MapperOpinion::toOpinion($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully',
+                'opinion' => $opinion,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editPointViewByStatus($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'PointView'){
+            return response()->json([
+                'success' => false,
+                'message' => 'PointView not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($peopleContent->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OldStatus not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $peopleContent->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($is_status){
+            $peopleContent->status_id = $status->id;
+
+            $peopleContent->save();
+
+            $pointView = MapperPointView::toPointView($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully',
+                'pointView' => $pointView,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Services\StatusManagement\StatusMatcher;
 use App\Models\News;
 use App\Models\Status;
 use App\Models\Video;
@@ -300,6 +301,99 @@ class VideoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot edit video'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editVideoByStatus($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $video = Video::find($id);
+
+        if (!$video) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Video not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($video->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OldStatus not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $video->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($is_status){
+            $video->status_id = $status->id;
+
+            $video->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully',
+                'video' => $video,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
     }
