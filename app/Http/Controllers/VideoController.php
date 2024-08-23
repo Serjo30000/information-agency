@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class VideoController extends Controller
@@ -227,5 +228,79 @@ class VideoController extends Controller
             'success' => true,
             'message' => 'Video deleted successfully'
         ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function editVideo($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $video = Video::find($id);
+
+        if (!$video) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Video not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($video->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $video->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'path_to_video' => [
+                    'required',
+                    'string',
+                    Rule::unique('videos', 'path_to_video')->ignore($video->id),
+                ],
+                'title' => 'required|string',
+                'source' => 'required|string',
+                'publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+            ];
+
+            try {
+                $request->validate($rules);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $video->path_to_video = $request->input('path_to_video');
+            $video->title = $request->input('title');
+            $video->source = $request->input('source');
+            $video->publication_date = $request->input('publication_date');
+
+            $video->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Video updated successfully',
+                'video' => $video,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit video'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
     }
 }

@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class RegionsAndPeoplesController extends Controller
@@ -314,6 +315,118 @@ class RegionsAndPeoplesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'People deleted successfully'
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function editRegion($id, Request $request){
+        $regionsAndPeoples = RegionsAndPeoples::find($id);
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RegionsAndPeoples not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Region not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => [
+                'required',
+                'string',
+                Rule::unique('regions_and_peoples', 'path_to_image')->ignore($regionsAndPeoples->id),
+            ],
+            'type_region' => 'required|string',
+            'name_region' => 'required|string',
+            'content' => 'required|string',
+            'date_foundation' => 'required|date_format:Y-m-d',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples->path_to_image = $request->input('path_to_image');
+        $regionsAndPeoples->position_or_type_region = $request->input('type_region');
+        $regionsAndPeoples->fio_or_name_region = $request->input('name_region');
+        $regionsAndPeoples->content = $request->input('content');
+        $regionsAndPeoples->date_birth_or_date_foundation = $request->input('date_foundation');
+
+        $regionsAndPeoples->save();
+
+        $region = MapperRegion::toRegion($regionsAndPeoples);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Region updated successfully',
+            'region' => $region,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function editPeople($id, Request $request){
+        $regionsAndPeoples = RegionsAndPeoples::find($id);
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RegionsAndPeoples not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People'){
+            return response()->json([
+                'success' => false,
+                'message' => 'People not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => [
+                'required',
+                'string',
+                Rule::unique('regions_and_peoples', 'path_to_image')->ignore($regionsAndPeoples->id),
+            ],
+            'position' => 'required|string',
+            'fio' => ['required','string','max:255',new FullName()],
+            'place_work' => 'required|string',
+            'content' => 'required|string',
+            'date_birth' => 'required|date_format:Y-m-d',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples->path_to_image = $request->input('path_to_image');
+        $regionsAndPeoples->position_or_type_region = $request->input('position');
+        $regionsAndPeoples->fio_or_name_region = $request->input('fio');
+        $regionsAndPeoples->place_work = $request->input('place_work');
+        $regionsAndPeoples->content = $request->input('content');
+        $regionsAndPeoples->date_birth_or_date_foundation = $request->input('date_birth');
+
+        $regionsAndPeoples->save();
+
+        $people = MapperPeople::toPeople($regionsAndPeoples);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'People updated successfully',
+            'people' => $people,
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

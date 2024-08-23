@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthorizationController extends Controller
@@ -113,7 +114,7 @@ class AuthorizationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User is authenticated',
-                'user' => Auth::guard('sanctum')->user()
+                'user' => $user,
             ]);
         }
 
@@ -132,5 +133,104 @@ class AuthorizationController extends Controller
         else{
             return response()->json($user, 200, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function findRole(){
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user == null){
+            return response()->json(['message' => 'User not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json($user->getRoleNames()->toArray(), 200, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function checkRole(Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'roles' => 'required|array',
+            'roles.*' => 'string|exists:roles,name',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+                'message' => 'Validation failed'
+            ], 422);
+        }
+
+        if ($user->hasAllRoles($request->input('roles'))){
+            return response()->json([
+                'success' => true,
+                'message' => 'There are roles'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'No this roles'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editAccount(Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'login' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'login')->ignore($user->id),
+            ],
+            'password' => 'required|string|min:8|confirmed',
+            'fio' => ['required','string','max:255',new FullName()],
+            'phone' => ['required', 'string', 'max:15', Rule::unique('users', 'phone')->ignore($user->id), new PhoneNumber],
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->tokens()->count()>0){
+            $user->tokens()->delete();
+        }
+
+        $user->login = $request->input('login');
+        $user->password = $request->input('password');
+        $user->fio = $request->input('fio');
+        $user->phone = $request->input('phone');
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully',
+            'user' => $user,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

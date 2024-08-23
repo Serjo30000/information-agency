@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class GrandNewsController extends Controller
@@ -245,5 +246,100 @@ class GrandNewsController extends Controller
             'success' => true,
             'message' => 'GrandNews deleted successfully'
         ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function editGrandNews($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::find($id);
+
+        if (!$grandNews) {
+            return response()->json([
+                'success' => false,
+                'message' => 'GrandNews not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::find($grandNews->news_id);
+
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($news->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $news->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'start_publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'end_publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'priority' => 'required|integer|min:0',
+                'news_id' => 'required|integer|exists:news,id',
+            ];
+
+            $startDate = $request->input('start_publication_date');
+            $endDate = $request->input('end_publication_date');
+
+            $dateRangeRule = new DateRange($startDate, $endDate);
+
+            try {
+                $request->validate($rules);
+
+                if (!$dateRangeRule->passes('date_range', null)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $dateRangeRule->message()
+                    ], 422, [], JSON_UNESCAPED_UNICODE);
+                }
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $grandNews->start_publication_date = $request->input('start_publication_date');
+            $grandNews->end_publication_date = $request->input('end_publication_date');
+            $grandNews->priority = $request->input('priority');
+            $grandNews->news_id = $request->input('news_id');
+
+            $grandNews->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'GrandNews updated successfully',
+                'grandNews' => $grandNews,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit grandNews'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
     }
 }
