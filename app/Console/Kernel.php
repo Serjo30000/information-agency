@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('app:update-post-status')->hourly();
         // $schedule->command('inspire')->hourly();
     }
 

@@ -25,7 +25,7 @@ class PeopleContentController extends Controller
     {
         $peopleContents = PeopleContent::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with(['status', 'regionsAndPeoples'])->get();
 
         return response()->json($peopleContents, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -45,7 +45,7 @@ class PeopleContentController extends Controller
 
         $peopleContents = PeopleContent::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with(['status', 'regionsAndPeoples'])->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -79,7 +79,7 @@ class PeopleContentController extends Controller
         $peopleContent = PeopleContent::where('id', $id)
             ->whereHas('status', function ($query) {
                 $query->where('status', 'Опубликовано');
-            })
+            })->with(['status', 'regionsAndPeoples'])
             ->first();
 
         if ($peopleContent){
@@ -94,7 +94,7 @@ class PeopleContentController extends Controller
 
     public function allPeopleContentsForPanel()
     {
-        $peopleContents = PeopleContent::all();
+        $peopleContents = PeopleContent::with(['status', 'regionsAndPeoples'])->get();
 
         return response()->json($peopleContents, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -112,7 +112,7 @@ class PeopleContentController extends Controller
             ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $peopleContents = PeopleContent::all();
+        $peopleContents = PeopleContent::with(['status', 'regionsAndPeoples'])->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -143,7 +143,7 @@ class PeopleContentController extends Controller
     }
 
     public function findPeopleContentForPanel($id){
-        $peopleContent = PeopleContent::find($id);
+        $peopleContent = PeopleContent::with(['status', 'regionsAndPeoples'])->find($id);
 
         if ($peopleContent){
             return response()->json($peopleContent, 200, [], JSON_UNESCAPED_UNICODE);
@@ -1415,7 +1415,7 @@ class PeopleContentController extends Controller
                     'Ожидает подтверждения' => ['Редактируется'],
                     'Снято с публикации' => ['Опубликовано'],
                     'Опубликовано' => ['Ожидает подтверждения'],
-                    'Ожидает публикации' => ['Ожидает подтверждения'],
+//                    'Ожидает публикации' => ['Ожидает подтверждения'],
                     'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
                 ]);
             }
