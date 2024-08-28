@@ -21,7 +21,7 @@ class GrandNewsController extends Controller
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->get();
+        })->with('news')->get();
 
         return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -32,7 +32,7 @@ class GrandNewsController extends Controller
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->take(5)->get();
+        })->with('news')->take(5)->get();
 
         return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -43,7 +43,7 @@ class GrandNewsController extends Controller
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->take(20)->get();
+        })->with('news')->take(20)->get();
 
         return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -54,11 +54,18 @@ class GrandNewsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $grandNews = GrandNews::whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->get();
+        })->with('news')->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -94,7 +101,7 @@ class GrandNewsController extends Controller
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->first();
+        })->with('news')->first();
 
         if ($grandNewsOne){
             return response()->json($grandNewsOne, 200, [], JSON_UNESCAPED_UNICODE);
@@ -110,7 +117,7 @@ class GrandNewsController extends Controller
 
     public function allGrandNewsForPanel()
     {
-        $grandNews = GrandNews::all();
+        $grandNews = GrandNews::with('news')->get();
 
         return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -121,7 +128,14 @@ class GrandNewsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $grandNews = GrandNews::all();
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::with('news')->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -152,7 +166,7 @@ class GrandNewsController extends Controller
     }
 
     public function findGrandNewsOneForPanel($id){
-        $grandNewsOne = GrandNews::find($id);
+        $grandNewsOne = GrandNews::with('news')->find($id);
 
         if ($grandNewsOne){
             return response()->json($grandNewsOne, 200, [], JSON_UNESCAPED_UNICODE);
@@ -223,9 +237,11 @@ class GrandNewsController extends Controller
             'news_id' => $request->input('news_id'),
         ]);
 
+        $grandNewsWithNews = GrandNews::with('news')->find($grandNews->id);
+
         return response()->json([
             'success' => true,
-            'grandNews' => $grandNews,
+            'grandNews' => $grandNewsWithNews,
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
@@ -329,10 +345,12 @@ class GrandNewsController extends Controller
 
             $grandNews->save();
 
+            $grandNewsWithNews = GrandNews::with('news')->find($grandNews->id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'GrandNews updated successfully',
-                'grandNews' => $grandNews,
+                'grandNews' => $grandNewsWithNews,
             ], 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{

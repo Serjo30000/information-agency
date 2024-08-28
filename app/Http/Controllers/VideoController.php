@@ -19,7 +19,7 @@ class VideoController extends Controller
     {
         $videos = Video::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with('status')->get();
 
         return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -28,7 +28,7 @@ class VideoController extends Controller
     {
         $videos = Video::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })
+        })->with('status')
             ->take(4)
             ->get();
 
@@ -39,7 +39,7 @@ class VideoController extends Controller
     {
         $videos = Video::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })
+        })->with('status')
             ->take(10)
             ->get();
 
@@ -52,9 +52,16 @@ class VideoController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $videos = Video::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with('status')->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -88,7 +95,7 @@ class VideoController extends Controller
         $video = Video::where('id', $id)
             ->whereHas('status', function ($query) {
                 $query->where('status', 'Опубликовано');
-            })
+            })->with('status')
             ->first();
 
         if ($video){
@@ -106,7 +113,7 @@ class VideoController extends Controller
 
     public function allVideosForPanel()
     {
-        $videos = Video::all();
+        $videos = Video::with('status')->get();
 
         return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -117,7 +124,14 @@ class VideoController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $videos = Video::all();
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $videos = Video::with('status')->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -148,7 +162,7 @@ class VideoController extends Controller
     }
 
     public function findVideoForPanel($id){
-        $video = Video::find($id);
+        $video = Video::with('status')->find($id);
 
         if ($video){
             return response()->json($video, 200, [], JSON_UNESCAPED_UNICODE);
@@ -206,9 +220,11 @@ class VideoController extends Controller
             'status_id' => $status->id,
         ]);
 
+        $videoWithStatus = Video::with('status')->find($video->id);
+
         return response()->json([
             'success' => true,
-            'video' => $video,
+            'video' => $videoWithStatus,
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
@@ -291,10 +307,12 @@ class VideoController extends Controller
 
             $video->save();
 
+            $videoWithStatus = Video::with('status')->find($video->id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Video updated successfully',
-                'video' => $video,
+                'video' => $videoWithStatus,
             ], 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
@@ -384,10 +402,12 @@ class VideoController extends Controller
 
             $video->save();
 
+            $videoWithStatus = Video::with('status')->find($video->id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Status updated successfully',
-                'video' => $video,
+                'video' => $videoWithStatus,
             ], 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{

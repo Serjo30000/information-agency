@@ -68,7 +68,7 @@ class ReportController extends Controller
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
-        })->get();
+        })->with('news')->get();
 
         $topPriorityNews = $grandNews->sortByDesc('priority')->all();
 

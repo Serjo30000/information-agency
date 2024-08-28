@@ -22,6 +22,13 @@ class StatusController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $statuses = Status::all();
 
         if ($startDate) {

@@ -19,8 +19,8 @@ class Interview
     public $user_id;
     public $status_id;
     private $user;
-    private $status;
-    private $regions_and_peoples;
+    public $status;
+    public $regions_and_peoples;
 
     public function __construct($id, $path_to_image, $title, $content, $source, $type, $publication_date, $regions_and_peoples_id, $user_id, $status_id) {
         $this->id = $id;

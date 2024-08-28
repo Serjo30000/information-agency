@@ -36,6 +36,13 @@ class PeopleContentController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $peopleContents = PeopleContent::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
         })->get();
@@ -97,6 +104,13 @@ class PeopleContentController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $peopleContents = PeopleContent::all();
 
@@ -173,6 +187,13 @@ class PeopleContentController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $interviews = collect(FilterInterview::allInterviewsByFilter());
 
         if ($startDate) {
@@ -229,6 +250,13 @@ class PeopleContentController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $interviews = collect(FilterInterview::allInterviewsByFilterForPanel());
 
@@ -298,6 +326,13 @@ class PeopleContentController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $opinions = collect(FilterOpinion::allOpinionsByFilter());
 
         if ($startDate) {
@@ -354,6 +389,13 @@ class PeopleContentController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $opinions = collect(FilterOpinion::allOpinionsByFilterForPanel());
 
@@ -416,6 +458,13 @@ class PeopleContentController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $pointViews = collect(FilterPointView::allPointViewsByFilter());
 
         if ($startDate) {
@@ -472,6 +521,13 @@ class PeopleContentController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $pointViews = collect(FilterPointView::allPointViewsByFilterForPanel());
 

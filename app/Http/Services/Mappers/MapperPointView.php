@@ -19,6 +19,10 @@ class MapperPointView
             $peopleContent->status_id,
         );
 
+        $pointView->getRegionsAndPeoples();
+
+        $pointView->getStatus();
+
         return $pointView;
     }
 

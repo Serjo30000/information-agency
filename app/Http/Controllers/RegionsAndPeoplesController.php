@@ -31,6 +31,13 @@ class RegionsAndPeoplesController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $regionsAndPeoples = RegionsAndPeoples::all();
 
         if ($startDate) {
@@ -84,6 +91,13 @@ class RegionsAndPeoplesController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $peoples = collect(FilterPeople::allPeoplesByFilter());
 
@@ -152,6 +166,13 @@ class RegionsAndPeoplesController extends Controller
         $perPage = $request->input('per_page', 10);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $regions = collect(FilterRegion::allRegionsByFilter());
 

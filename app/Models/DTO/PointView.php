@@ -16,8 +16,8 @@ class PointView
     public $user_id;
     public $status_id;
     private $user;
-    private $status;
-    private $regions_and_peoples;
+    public $status;
+    public $regions_and_peoples;
 
     public function __construct($id, $title, $content, $type, $regions_and_peoples_id, $user_id, $status_id) {
         $this->id = $id;

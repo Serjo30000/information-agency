@@ -21,6 +21,10 @@ class MapperOpinion
             $peopleContent->status_id,
         );
 
+        $opinion->getRegionsAndPeoples();
+
+        $opinion->getStatus();
+
         return $opinion;
     }
 

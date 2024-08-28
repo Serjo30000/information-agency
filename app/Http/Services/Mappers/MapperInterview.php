@@ -22,6 +22,10 @@ class MapperInterview
             $peopleContent->status_id,
         );
 
+        $interview->getRegionsAndPeoples();
+
+        $interview->getStatus();
+
         return $interview;
     }
 

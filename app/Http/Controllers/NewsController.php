@@ -20,7 +20,8 @@ class NewsController extends Controller
     {
         $news = News::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with(['status', 'regionsAndPeoples'])
+        ->get();
 
         return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -36,7 +37,7 @@ class NewsController extends Controller
         $news = $region->getNews()
             ->whereHas('status', function ($query) {
                 $query->where('status', 'Опубликовано');
-            })
+            })->with(['status', 'regionsAndPeoples'])
             ->take(10)
             ->get();
 
@@ -49,9 +50,16 @@ class NewsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $news = News::whereHas('status', function ($query) {
             $query->where('status', 'Опубликовано');
-        })->get();
+        })->with(['status', 'regionsAndPeoples'])->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -89,12 +97,19 @@ class NewsController extends Controller
         $searchTerm = $request->input('searchContent');
         $selectedRegions = $request->input('selected_regions', []);
 
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $regionIds = RegionsAndPeoples::where('type', 'Region')->pluck('id')->toArray();
 
         $news = News::whereIn('regions_and_peoples_id', $regionIds)
             ->whereHas('status', function ($query) {
                 $query->where('status', 'опубликовано');
-            })->get();
+            })->with(['status', 'regionsAndPeoples'])->get();
 
         if (!empty($selectedRegions)) {
             $news = $news->filter(function($newsOne) use ($selectedRegions) {
@@ -141,7 +156,7 @@ class NewsController extends Controller
         $newsOne = News::where('id', $id)
             ->whereHas('status', function ($query) {
                 $query->where('status', 'Опубликовано');
-            })
+            })->with(['status', 'regionsAndPeoples'])
             ->first();
 
         if ($newsOne){
@@ -157,7 +172,7 @@ class NewsController extends Controller
 
     public function allNewsForPanel()
     {
-        $news = News::all();
+        $news = News::with(['status', 'regionsAndPeoples'])->get();
 
         return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
@@ -168,7 +183,14 @@ class NewsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $news = News::all();
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::with(['status', 'regionsAndPeoples'])->get();
 
         if ($startDate) {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -199,7 +221,7 @@ class NewsController extends Controller
     }
 
     public function findNewsOneForPanel($id){
-        $newsOne = News::find($id);
+        $newsOne = News::with(['status', 'regionsAndPeoples'])->find($id);
 
         if ($newsOne){
             return response()->json($newsOne, 200, [], JSON_UNESCAPED_UNICODE);
@@ -277,9 +299,11 @@ class NewsController extends Controller
             'status_id' => $status->id,
         ]);
 
+        $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
         return response()->json([
             'success' => true,
-            'news' => $news,
+            'news' => $newsWithStatusAndRegionsAndPeoples,
             'message' => 'Create successful'
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
@@ -382,10 +406,12 @@ class NewsController extends Controller
 
             $news->save();
 
+            $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'News updated successfully',
-                'news' => $news,
+                'news' => $newsWithStatusAndRegionsAndPeoples,
             ], 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
@@ -475,10 +501,12 @@ class NewsController extends Controller
 
             $news->save();
 
+            $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Status updated successfully',
-                'news' => $news,
+                'news' => $newsWithStatusAndRegionsAndPeoples,
             ], 200, [], JSON_UNESCAPED_UNICODE);
         }
         else{
