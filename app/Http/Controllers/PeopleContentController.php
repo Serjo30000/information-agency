@@ -577,6 +577,7 @@ class PeopleContentController extends Controller
             'content' => 'required|string',
             'source' => 'required|string',
             'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
         ];
 
@@ -630,12 +631,15 @@ class PeopleContentController extends Controller
             'source' => $request->input('source'),
             'type' => "Interview",
             'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
             'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
             'user_id' => $user->id,
             'status_id' => $status->id,
         ]);
 
-        $interview = MapperInterview::toInterview($peopleContent);
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $interview = MapperInterview::toInterview($peopleContentNew);
 
         return response()->json([
             'success' => true,
@@ -650,6 +654,7 @@ class PeopleContentController extends Controller
             'title' => 'required|string',
             'content' => 'required|string',
             'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
         ];
 
@@ -702,12 +707,15 @@ class PeopleContentController extends Controller
             'content' => $request->input('content'),
             'type' => "Opinion",
             'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
             'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
             'user_id' => $user->id,
             'status_id' => $status->id,
         ]);
 
-        $opinion = MapperOpinion::toOpinion($peopleContent);
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $opinion = MapperOpinion::toOpinion($peopleContentNew);
 
         return response()->json([
             'success' => true,
@@ -720,6 +728,7 @@ class PeopleContentController extends Controller
         $rules = [
             'title' => 'required|string',
             'content' => 'required|string',
+            'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
         ];
 
@@ -770,12 +779,15 @@ class PeopleContentController extends Controller
             'title' => $request->input('title'),
             'content' => $request->input('content'),
             'type' => "PointView",
+            'sys_Comment' => $request->input('sys_Comment'),
             'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
             'user_id' => $user->id,
             'status_id' => $status->id,
         ]);
 
-        $pointView = MapperPointView::toPointView($peopleContent);
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $pointView = MapperPointView::toPointView($peopleContentNew);
 
         return response()->json([
             'success' => true,
@@ -901,6 +913,7 @@ class PeopleContentController extends Controller
                 'content' => 'required|string',
                 'source' => 'required|string',
                 'publication_date' => 'required|date_format:Y-m-d',
+                'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
             ];
 
@@ -934,6 +947,7 @@ class PeopleContentController extends Controller
             $peopleContent->content = $request->input('content');
             $peopleContent->source = $request->input('source');
             $peopleContent->publication_date = $request->input('publication_date');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
 
             $peopleContent->save();
@@ -995,6 +1009,7 @@ class PeopleContentController extends Controller
                 'title' => 'required|string',
                 'content' => 'required|string',
                 'publication_date' => 'required|date_format:Y-m-d',
+                'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
             ];
 
@@ -1027,6 +1042,7 @@ class PeopleContentController extends Controller
             $peopleContent->title = $request->input('title');
             $peopleContent->content = $request->input('content');
             $peopleContent->publication_date = $request->input('publication_date');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
 
             $peopleContent->save();
@@ -1086,6 +1102,7 @@ class PeopleContentController extends Controller
             $rules = [
                 'title' => 'required|string',
                 'content' => 'required|string',
+                'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
             ];
 
@@ -1116,6 +1133,7 @@ class PeopleContentController extends Controller
 
             $peopleContent->title = $request->input('title');
             $peopleContent->content = $request->input('content');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
 
             $peopleContent->save();

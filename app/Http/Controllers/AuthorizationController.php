@@ -21,6 +21,7 @@ class AuthorizationController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'fio' => ['required','string','max:255',new FullName()],
             'phone' => ['required', 'string', 'max:15', 'unique:users', new PhoneNumber],
+            'sys_Comment' => 'nullable|string',
             'roles' => 'required|array',
             'roles.*' => 'string|exists:roles,name',
         ];
@@ -40,6 +41,7 @@ class AuthorizationController extends Controller
             'password' => Hash::make($request->input('password')),
             'fio' => $request->input('fio'),
             'phone' => $request->input('phone'),
+            'sys_Comment' => $request->input('sys_Comment'),
         ]);
 
         $user->assignRole($request->input('roles'));
@@ -205,6 +207,7 @@ class AuthorizationController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'fio' => ['required','string','max:255',new FullName()],
             'phone' => ['required', 'string', 'max:15', Rule::unique('users', 'phone')->ignore($user->id), new PhoneNumber],
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -224,6 +227,7 @@ class AuthorizationController extends Controller
         $user->password = $request->input('password');
         $user->fio = $request->input('fio');
         $user->phone = $request->input('phone');
+        $user->sys_Comment = $request->input('sys_Comment');
 
         $user->save();
 

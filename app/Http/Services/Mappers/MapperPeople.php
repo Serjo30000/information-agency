@@ -19,6 +19,8 @@ class MapperPeople
             $regionsAndPeoples->content,
             $regionsAndPeoples->type,
             $regionsAndPeoples->date_birth_or_date_foundation,
+            $regionsAndPeoples->sys_Comment,
+            $regionsAndPeoples->delete_mark,
         );
 
         return $people;
@@ -36,6 +38,8 @@ class MapperPeople
                 'content' => $people->content,
                 'type' => $people->type,
                 'date_birth_or_date_foundation' => $people->date_birth,
+                'sys_Comment' => $people->sys_Comment,
+                'delete_mark' => $people->delete_mark,
             ]
         );
 

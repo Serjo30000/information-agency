@@ -16,6 +16,8 @@ class Video extends Model
         'title',
         'source',
         'publication_date',
+        'sys_Comment',
+        'delete_mark',
         'user_id',
         'status_id',
     ];

@@ -25,6 +25,8 @@ class User extends Authenticatable
         'password',
         'fio',
         'phone',
+        'sys_Comment',
+        'delete_mark',
     ];
 
     /**

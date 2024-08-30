@@ -174,7 +174,7 @@ class VideoController extends Controller
 
     public function createVideo(Request $request){
         $rules = [
-            'path_to_video' => 'required|string|unique:videos,path_to_video',
+            'path_to_video' => 'required|string',
             'title' => 'required|string',
             'source' => 'required|string',
             'publication_date' => [
@@ -182,6 +182,7 @@ class VideoController extends Controller
                 'string',
                 'date_format:"Y-m-d H:i:s"',
             ],
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -216,6 +217,7 @@ class VideoController extends Controller
             'title' => $request->input('title'),
             'source' => $request->input('source'),
             'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
             'user_id' => $user->id,
             'status_id' => $status->id,
         ]);
@@ -277,11 +279,7 @@ class VideoController extends Controller
 
         if ($user->id == $video->user_id && $status->status == "Редактируется"){
             $rules = [
-                'path_to_video' => [
-                    'required',
-                    'string',
-                    Rule::unique('videos', 'path_to_video')->ignore($video->id),
-                ],
+                'path_to_video' => 'required|string',
                 'title' => 'required|string',
                 'source' => 'required|string',
                 'publication_date' => [
@@ -289,6 +287,7 @@ class VideoController extends Controller
                     'string',
                     'date_format:"Y-m-d H:i:s"',
                 ],
+                'sys_Comment' => 'nullable|string',
             ];
 
             try {
@@ -304,6 +303,7 @@ class VideoController extends Controller
             $video->title = $request->input('title');
             $video->source = $request->input('source');
             $video->publication_date = $request->input('publication_date');
+            $video->sys_Comment = $request->input('sys_Comment');
 
             $video->save();
 

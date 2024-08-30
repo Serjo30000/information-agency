@@ -18,6 +18,8 @@ class RegionsAndPeoples extends Model
         'content',
         'type',
         'date_birth_or_date_foundation',
+        'sys_Comment',
+        'delete_mark',
     ];
 
     protected $casts = [

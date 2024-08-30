@@ -17,7 +17,8 @@ class GrandNewsController extends Controller
 {
     public function allGrandNews()
     {
-        $grandNews = GrandNews::whereHas('news', function ($query) {
+        $grandNews = GrandNews::where('isActivate', true)
+            ->whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
@@ -28,7 +29,8 @@ class GrandNewsController extends Controller
 
     public function listGrandNewsTopFive()
     {
-        $grandNews = GrandNews::whereHas('news', function ($query) {
+        $grandNews = GrandNews::where('isActivate', true)
+            ->whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
@@ -39,7 +41,8 @@ class GrandNewsController extends Controller
 
     public function listGrandNewsTopTwenty()
     {
-        $grandNews = GrandNews::whereHas('news', function ($query) {
+        $grandNews = GrandNews::where('isActivate', true)
+            ->whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
@@ -61,7 +64,8 @@ class GrandNewsController extends Controller
             ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $grandNews = GrandNews::whereHas('news', function ($query) {
+        $grandNews = GrandNews::where('isActivate', true)
+            ->whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
             });
@@ -96,7 +100,8 @@ class GrandNewsController extends Controller
     }
 
     public function findGrandNewsOne($id){
-        $grandNewsOne = GrandNews::where('id', $id)
+        $grandNewsOne = GrandNews::where('isActivate', true)
+            ->where('id', $id)
             ->whereHas('news', function ($query) {
             $query->whereHas('status', function ($statusQuery) {
                 $statusQuery->where('status', 'Опубликовано');
@@ -189,6 +194,8 @@ class GrandNewsController extends Controller
                 'date_format:"Y-m-d H:i:s"',
             ],
             'priority' => 'required|integer|min:0',
+            'sys_Comment' => 'nullable|string',
+            'isActivate' => 'required|boolean',
             'news_id' => 'required|integer|exists:news,id',
         ];
 
@@ -234,6 +241,8 @@ class GrandNewsController extends Controller
             'start_publication_date' => $request->input('start_publication_date'),
             'end_publication_date' => $request->input('end_publication_date'),
             'priority' => $request->input('priority'),
+            'sys_Comment' => $request->input('sys_Comment'),
+            'isActivate' => $request->input('isActivate'),
             'news_id' => $request->input('news_id'),
         ]);
 
@@ -314,6 +323,8 @@ class GrandNewsController extends Controller
                     'date_format:"Y-m-d H:i:s"',
                 ],
                 'priority' => 'required|integer|min:0',
+                'sys_Comment' => 'nullable|string',
+                'isActivate' => 'required|boolean',
                 'news_id' => 'required|integer|exists:news,id',
             ];
 
@@ -341,6 +352,8 @@ class GrandNewsController extends Controller
             $grandNews->start_publication_date = $request->input('start_publication_date');
             $grandNews->end_publication_date = $request->input('end_publication_date');
             $grandNews->priority = $request->input('priority');
+            $grandNews->sys_Comment = $request->input('sys_Comment');
+            $grandNews->isActivate = $request->input('isActivate');
             $grandNews->news_id = $request->input('news_id');
 
             $grandNews->save();

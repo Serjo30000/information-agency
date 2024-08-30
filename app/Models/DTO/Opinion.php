@@ -14,6 +14,8 @@ class Opinion
     public $content;
     public $type;
     public $publication_date;
+    public $sys_Comment;
+    public $delete_mark;
     public $regions_and_peoples_id;
     public $user_id;
     public $status_id;
@@ -21,13 +23,15 @@ class Opinion
     public $status;
     public $regions_and_peoples;
 
-    public function __construct($id, $path_to_image, $title, $content, $type, $publication_date, $regions_and_peoples_id, $user_id, $status_id) {
+    public function __construct($id, $path_to_image, $title, $content, $type, $publication_date, $sys_Comment, $delete_mark, $regions_and_peoples_id, $user_id, $status_id) {
         $this->id = $id;
         $this->path_to_image = $path_to_image;
         $this->title = $title;
         $this->content = $content;
         $this->type = $type;
         $this->publication_date = $publication_date;
+        $this->sys_Comment = $sys_Comment;
+        $this->delete_mark = $delete_mark;
         $this->regions_and_peoples_id = $regions_and_peoples_id;
         $this->user_id = $user_id;
         $this->status_id = $status_id;

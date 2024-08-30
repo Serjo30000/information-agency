@@ -14,6 +14,7 @@ class Status extends Model
     protected $fillable = [
         'order',
         'status',
+        'sys_Comment',
     ];
 
     public function news()

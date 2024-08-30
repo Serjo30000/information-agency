@@ -217,11 +217,12 @@ class RegionsAndPeoplesController extends Controller
 
     public function createRegion(Request $request){
         $rules = [
-            'path_to_image' => 'required|string|unique:regions_and_peoples,path_to_image',
+            'path_to_image' => 'required|string',
             'type_region' => 'required|string',
             'name_region' => 'required|string',
             'content' => 'required|string',
             'date_foundation' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -240,9 +241,12 @@ class RegionsAndPeoplesController extends Controller
             'content' => $request->input('content'),
             'type' => "Region",
             'date_birth_or_date_foundation' => $request->input('date_foundation'),
+            'sys_Comment' => $request->input('sys_Comment'),
         ]);
 
-        $region = MapperRegion::toRegion($regionsAndPeoples);
+        $regionsAndPeoplesNew = RegionsAndPeoples::find($regionsAndPeoples->id);
+
+        $region = MapperRegion::toRegion($regionsAndPeoplesNew);
 
         return response()->json([
             'success' => true,
@@ -253,12 +257,13 @@ class RegionsAndPeoplesController extends Controller
 
     public function createPeople(Request $request){
         $rules = [
-            'path_to_image' => 'required|string|unique:regions_and_peoples,path_to_image',
+            'path_to_image' => 'required|string',
             'position' => 'required|string',
             'fio' => ['required','string','max:255',new FullName()],
             'place_work' => 'required|string',
             'content' => 'required|string',
             'date_birth' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -278,9 +283,12 @@ class RegionsAndPeoplesController extends Controller
             'content' => $request->input('content'),
             'type' => "People",
             'date_birth_or_date_foundation' => $request->input('date_birth'),
+            'sys_Comment' => $request->input('sys_Comment'),
         ]);
 
-        $people = MapperPeople::toPeople($regionsAndPeoples);
+        $regionsAndPeoplesNew = RegionsAndPeoples::find($regionsAndPeoples->id);
+
+        $people = MapperPeople::toPeople($regionsAndPeoplesNew);
 
         return response()->json([
             'success' => true,
@@ -357,15 +365,12 @@ class RegionsAndPeoplesController extends Controller
         }
 
         $rules = [
-            'path_to_image' => [
-                'required',
-                'string',
-                Rule::unique('regions_and_peoples', 'path_to_image')->ignore($regionsAndPeoples->id),
-            ],
+            'path_to_image' => 'required|string',
             'type_region' => 'required|string',
             'name_region' => 'required|string',
             'content' => 'required|string',
             'date_foundation' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -382,6 +387,7 @@ class RegionsAndPeoplesController extends Controller
         $regionsAndPeoples->fio_or_name_region = $request->input('name_region');
         $regionsAndPeoples->content = $request->input('content');
         $regionsAndPeoples->date_birth_or_date_foundation = $request->input('date_foundation');
+        $regionsAndPeoples->sys_Comment = $request->input('sys_Comment');
 
         $regionsAndPeoples->save();
 
@@ -412,16 +418,13 @@ class RegionsAndPeoplesController extends Controller
         }
 
         $rules = [
-            'path_to_image' => [
-                'required',
-                'string',
-                Rule::unique('regions_and_peoples', 'path_to_image')->ignore($regionsAndPeoples->id),
-            ],
+            'path_to_image' => 'required|string',
             'position' => 'required|string',
             'fio' => ['required','string','max:255',new FullName()],
             'place_work' => 'required|string',
             'content' => 'required|string',
             'date_birth' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
         ];
 
         try {
@@ -439,6 +442,7 @@ class RegionsAndPeoplesController extends Controller
         $regionsAndPeoples->place_work = $request->input('place_work');
         $regionsAndPeoples->content = $request->input('content');
         $regionsAndPeoples->date_birth_or_date_foundation = $request->input('date_birth');
+        $regionsAndPeoples->sys_Comment = $request->input('sys_Comment');
 
         $regionsAndPeoples->save();
 

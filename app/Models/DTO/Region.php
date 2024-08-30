@@ -14,10 +14,12 @@ class Region
     public $content;
     public $type;
     public $date_foundation;
+    public $sys_Comment;
+    public $delete_mark;
     private $peopleContents;
     private $news;
 
-    public function __construct($id, $path_to_image, $type_region, $name_region, $content, $type, $date_foundation) {
+    public function __construct($id, $path_to_image, $type_region, $name_region, $content, $type, $date_foundation, $sys_Comment, $delete_mark) {
         $this->id = $id;
         $this->path_to_image = $path_to_image;
         $this->type_region = $type_region;
@@ -25,6 +27,8 @@ class Region
         $this->content = $content;
         $this->type = $type;
         $this->date_foundation = $date_foundation;
+        $this->sys_Comment = $sys_Comment;
+        $this->delete_mark = $delete_mark;
     }
 
     private function loadPeopleContents()

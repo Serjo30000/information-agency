@@ -18,7 +18,7 @@ class FilterRegion
 
     public static function allRegionsByFilterAndSearch($searchTerm = null, $selectedRegions = [])
     {
-        $query = RegionsAndPeoples::where('type', 'Region');
+        $query = RegionsAndPeoples::where('type', 'Region')->where('position_or_type_region','!=','ПГТ')->where('position_or_type_region','!=','Город')->where('position_or_type_region','!=','Страна');
 
         if ($searchTerm) {
             $query->where('fio_or_name_region', 'LIKE', '%' . $searchTerm . '%');

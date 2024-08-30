@@ -12,6 +12,8 @@ class PointView
     public $title;
     public $content;
     public $type;
+    public $sys_Comment;
+    public $delete_mark;
     public $regions_and_peoples_id;
     public $user_id;
     public $status_id;
@@ -19,12 +21,14 @@ class PointView
     public $status;
     public $regions_and_peoples;
 
-    public function __construct($id, $title, $content, $type, $regions_and_peoples_id, $user_id, $status_id) {
+    public function __construct($id, $title, $content, $type, $sys_Comment, $delete_mark, $regions_and_peoples_id, $user_id, $status_id) {
         $this->id = $id;
         $this->title = $title;
         $this->content = $content;
         $this->regions_and_peoples_id = $regions_and_peoples_id;
         $this->type = $type;
+        $this->sys_Comment = $sys_Comment;
+        $this->delete_mark = $delete_mark;
         $this->user_id = $user_id;
         $this->status_id = $status_id;
     }

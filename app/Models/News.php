@@ -17,6 +17,8 @@ class News extends Model
         'content',
         'source',
         'publication_date',
+        'sys_Comment',
+        'delete_mark',
         'user_id',
         'regions_and_peoples_id',
         'status_id',

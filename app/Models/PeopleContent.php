@@ -18,6 +18,8 @@ class PeopleContent extends Model
         'source',
         'type',
         'publication_date',
+        'sys_Comment',
+        'delete_mark',
         'regions_and_peoples_id',
         'user_id',
         'status_id',

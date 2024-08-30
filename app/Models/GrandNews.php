@@ -15,6 +15,8 @@ class GrandNews extends Model
         'start_publication_date',
         'end_publication_date',
         'priority',
+        'sys_Comment',
+        'isActivate',
         'news_id',
     ];
 

@@ -233,10 +233,11 @@ class NewsController extends Controller
 
     public function createNews(Request $request){
         $rules = [
-            'path_to_image_or_video' => 'required|string|unique:news,path_to_image_or_video',
+            'path_to_image_or_video' => 'required|string',
             'title' => 'required|string',
             'content' => 'required|string',
-            'source' => 'string',
+            'source' => 'nullable|string',
+            'sys_Comment' => 'nullable|string',
             'publication_date' => [
                 'required',
                 'string',
@@ -294,6 +295,7 @@ class NewsController extends Controller
             'content' => $request->input('content'),
             'source' => $request->input('source'),
             'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
             'user_id' => $user->id,
             'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
             'status_id' => $status->id,
@@ -356,14 +358,11 @@ class NewsController extends Controller
 
         if ($user->id == $news->user_id && $status->status == "Редактируется"){
             $rules = [
-                'path_to_image_or_video' => [
-                    'required',
-                    'string',
-                    Rule::unique('news', 'path_to_image_or_video')->ignore($news->id),
-                ],
+                'path_to_image_or_video' => 'required|string',
                 'title' => 'required|string',
                 'content' => 'required|string',
-                'source' => 'string',
+                'source' => 'nullable|string',
+                'sys_Comment' => 'nullable|string',
                 'publication_date' => [
                     'required',
                     'string',
@@ -402,6 +401,7 @@ class NewsController extends Controller
             $news->content = $request->input('content');
             $news->source = $request->input('source');
             $news->publication_date = $request->input('publication_date');
+            $news->sys_Comment = $request->input('sys_Comment');
             $news->regions_and_peoples_id = $request->input('regions_and_peoples_id');
 
             $news->save();
