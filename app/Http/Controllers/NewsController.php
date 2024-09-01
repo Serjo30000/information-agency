@@ -132,9 +132,9 @@ class NewsController extends Controller
         }
 
         if ($searchTerm) {
-            $searchTerm = strtolower($searchTerm);
+            $searchTerm = mb_strtolower($searchTerm, 'UTF-8');
             $news = $news->filter(function($newsOne) use ($searchTerm) {
-                return stripos(strtolower($newsOne->content), $searchTerm) !== false;
+                return stripos(mb_strtolower($newsOne->content, 'UTF-8'), $searchTerm) !== false;
             });
         }
 
