@@ -12,6 +12,7 @@ use App\Http\Services\StatusManagement\StatusMatcher;
 use App\Models\PeopleContent;
 use App\Models\RegionsAndPeoples;
 use App\Models\Status;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -579,6 +580,7 @@ class PeopleContentController extends Controller
             'publication_date' => 'required|date_format:Y-m-d',
             'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
         ];
 
         try {
@@ -606,7 +608,14 @@ class PeopleContentController extends Controller
             ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $user = Auth::guard('sanctum')->user();
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
 
         if (!$user) {
             return response()->json([
@@ -648,14 +657,16 @@ class PeopleContentController extends Controller
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function createOpinion(Request $request){
+    public function createInterviewForCheck(Request $request){
         $rules = [
             'path_to_image' => 'required|string',
             'title' => 'required|string',
             'content' => 'required|string',
+            'source' => 'required|string',
             'publication_date' => 'required|date_format:Y-m-d',
             'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
         ];
 
         try {
@@ -683,7 +694,99 @@ class PeopleContentController extends Controller
             ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $user = Auth::guard('sanctum')->user();
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'source' => $request->input('source'),
+            'type' => "Interview",
+            'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $interview = MapperInterview::toInterview($peopleContentNew);
+
+        return response()->json([
+            'success' => true,
+            'interview' => $interview,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createOpinion(Request $request){
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
 
         if (!$user) {
             return response()->json([
@@ -724,12 +827,15 @@ class PeopleContentController extends Controller
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function createPointView(Request $request){
+    public function createOpinionForCheck(Request $request){
         $rules = [
+            'path_to_image' => 'required|string',
             'title' => 'required|string',
             'content' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
             'sys_Comment' => 'nullable|string',
             'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
         ];
 
         try {
@@ -757,7 +863,96 @@ class PeopleContentController extends Controller
             ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $user = Auth::guard('sanctum')->user();
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'path_to_image' => $request->input('path_to_image'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'type' => "Opinion",
+            'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $opinion = MapperOpinion::toOpinion($peopleContentNew);
+
+        return response()->json([
+            'success' => true,
+            'opinion' => $opinion,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createPointView(Request $request){
+        $rules = [
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
 
         if (!$user) {
             return response()->json([
@@ -796,6 +991,224 @@ class PeopleContentController extends Controller
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function createPointViewForCheck(Request $request){
+        $rules = [
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::create([
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'type' => "PointView",
+            'sys_Comment' => $request->input('sys_Comment'),
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $peopleContentNew = PeopleContent::find($peopleContent->id);
+
+        $pointView = MapperPointView::toPointView($peopleContentNew);
+
+        return response()->json([
+            'success' => true,
+            'pointView' => $pointView,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deleteInterviewMark(Request $request){
+        $rules = [
+            'interview_ids' => 'required|array',
+            'interview_ids.*' => 'integer|exists:people_contents,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContentItems = PeopleContent::whereIn('id', $request->input('interview_ids'))->where('type', 'Interview')->where('user_id', $user->id)->get();
+
+        foreach ($peopleContentItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $peopleContentItems = PeopleContent::with('status')
+            ->whereIn('id', $request->input('interview_ids'))->where('type', 'Interview')->where('user_id', $user->id)
+            ->get();
+
+        $interviewItems = $peopleContentItems->map(function($item) {
+            return MapperInterview::toInterview($item);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Interview delete_mark updated successfully',
+            'interview' => $interviewItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deleteOpinionMark(Request $request){
+        $rules = [
+            'opinion_ids' => 'required|array',
+            'opinion_ids.*' => 'integer|exists:people_contents,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContentItems = PeopleContent::whereIn('id', $request->input('opinion_ids'))->where('type', 'Opinion')->where('user_id', $user->id)->get();
+
+        foreach ($peopleContentItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $peopleContentItems = PeopleContent::with('status')
+            ->whereIn('id', $request->input('opinion_ids'))->where('type', 'Opinion')->where('user_id', $user->id)
+            ->get();
+
+        $opinionItems = $peopleContentItems->map(function($item) {
+            return MapperOpinion::toOpinion($item);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Opinion delete_mark updated successfully',
+            'opinion' => $opinionItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deletePointViewMark(Request $request){
+        $rules = [
+            'point_view_ids' => 'required|array',
+            'point_view_ids.*' => 'integer|exists:people_contents,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContentItems = PeopleContent::whereIn('id', $request->input('point_view_ids'))->where('type', 'PointView')->where('user_id', $user->id)->get();
+
+        foreach ($peopleContentItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $peopleContentItems = PeopleContent::with('status')
+            ->whereIn('id', $request->input('point_view_ids'))->where('type', 'PointView')->where('user_id', $user->id)
+            ->get();
+
+        $pointViewItems = $peopleContentItems->map(function($item) {
+            return MapperPointView::toPointView($item);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PointView delete_mark updated successfully',
+            'pointView' => $pointViewItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function deleteInterview($id){
         $peopleContent = PeopleContent::find($id);
 
@@ -811,6 +1224,13 @@ class PeopleContentController extends Controller
                 'success' => false,
                 'message' => 'Interview not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$peopleContent->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         $peopleContent->delete();
@@ -838,6 +1258,13 @@ class PeopleContentController extends Controller
             ], 404, [], JSON_UNESCAPED_UNICODE);
         }
 
+        if (!$peopleContent->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $peopleContent->delete();
 
         return response()->json([
@@ -861,6 +1288,13 @@ class PeopleContentController extends Controller
                 'success' => false,
                 'message' => 'PointView not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$peopleContent->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         $peopleContent->delete();
@@ -915,6 +1349,7 @@ class PeopleContentController extends Controller
                 'publication_date' => 'required|date_format:Y-m-d',
                 'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
             ];
 
             try {
@@ -924,6 +1359,17 @@ class PeopleContentController extends Controller
                     'success' => false,
                     'message' => 'Validation failed'
                 ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
             }
 
             $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
@@ -949,6 +1395,127 @@ class PeopleContentController extends Controller
             $peopleContent->publication_date = $request->input('publication_date');
             $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+
+            $peopleContent->save();
+
+            $interview = MapperInterview::toInterview($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview updated successfully',
+                'interview' => $interview,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit interview'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editInterviewForCheck($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Interview'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($peopleContent->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $peopleContent->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'path_to_image' => 'required|string',
+                'title' => 'required|string',
+                'content' => 'required|string',
+                'source' => 'required|string',
+                'publication_date' => 'required|date_format:Y-m-d',
+                'sys_Comment' => 'nullable|string',
+                'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
+            ];
+
+            try {
+                $request->validate($rules);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+            if (!$regionsAndPeoples) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Region and People record not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($regionsAndPeoples->type !== 'People') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid type. Expected "People".'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $peopleContent->path_to_image = $request->input('path_to_image');
+            $peopleContent->title = $request->input('title');
+            $peopleContent->content = $request->input('content');
+            $peopleContent->source = $request->input('source');
+            $peopleContent->publication_date = $request->input('publication_date');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
+            $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+            $peopleContent->status_id = $status->id;
 
             $peopleContent->save();
 
@@ -1011,6 +1578,7 @@ class PeopleContentController extends Controller
                 'publication_date' => 'required|date_format:Y-m-d',
                 'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
             ];
 
             try {
@@ -1038,12 +1606,142 @@ class PeopleContentController extends Controller
                 ], 422, [], JSON_UNESCAPED_UNICODE);
             }
 
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
             $peopleContent->path_to_image = $request->input('path_to_image');
             $peopleContent->title = $request->input('title');
             $peopleContent->content = $request->input('content');
             $peopleContent->publication_date = $request->input('publication_date');
             $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+
+            $peopleContent->save();
+
+            $opinion = MapperOpinion::toOpinion($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Opinion updated successfully',
+                'opinion' => $opinion,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit opinion'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editOpinionForCheck($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Opinion'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Opinion not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($peopleContent->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $peopleContent->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'path_to_image' => 'required|string',
+                'title' => 'required|string',
+                'content' => 'required|string',
+                'publication_date' => 'required|date_format:Y-m-d',
+                'sys_Comment' => 'nullable|string',
+                'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
+            ];
+
+            try {
+                $request->validate($rules);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+            if (!$regionsAndPeoples) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Region and People record not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($regionsAndPeoples->type !== 'People') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid type. Expected "People".'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $peopleContent->path_to_image = $request->input('path_to_image');
+            $peopleContent->title = $request->input('title');
+            $peopleContent->content = $request->input('content');
+            $peopleContent->publication_date = $request->input('publication_date');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
+            $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+            $peopleContent->status_id = $status->id;
 
             $peopleContent->save();
 
@@ -1104,6 +1802,7 @@ class PeopleContentController extends Controller
                 'content' => 'required|string',
                 'sys_Comment' => 'nullable|string',
                 'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
             ];
 
             try {
@@ -1131,10 +1830,136 @@ class PeopleContentController extends Controller
                 ], 422, [], JSON_UNESCAPED_UNICODE);
             }
 
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
             $peopleContent->title = $request->input('title');
             $peopleContent->content = $request->input('content');
             $peopleContent->sys_Comment = $request->input('sys_Comment');
             $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+
+            $peopleContent->save();
+
+            $pointView = MapperPointView::toPointView($peopleContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'PointView updated successfully',
+                'pointView' => $pointView,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit pointView'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editPointViewForCheck($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'PointView'){
+            return response()->json([
+                'success' => false,
+                'message' => 'PointView not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($peopleContent->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $peopleContent->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'title' => 'required|string',
+                'content' => 'required|string',
+                'sys_Comment' => 'nullable|string',
+                'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
+            ];
+
+            try {
+                $request->validate($rules);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+            if (!$regionsAndPeoples) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Region and People record not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($regionsAndPeoples->type !== 'People') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid type. Expected "People".'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $peopleContent->title = $request->input('title');
+            $peopleContent->content = $request->input('content');
+            $peopleContent->sys_Comment = $request->input('sys_Comment');
+            $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $peopleContent->user_id = $user->id;
+            $peopleContent->status_id = $status->id;
 
             $peopleContent->save();
 

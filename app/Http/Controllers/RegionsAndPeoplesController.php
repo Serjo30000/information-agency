@@ -297,6 +297,78 @@ class RegionsAndPeoplesController extends Controller
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function deleteRegionMark(Request $request){
+        $rules = [
+            'region_ids' => 'required|array',
+            'region_ids.*' => 'integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoplesItems = RegionsAndPeoples::whereIn('id', $request->input('region_ids'))->where('type', 'Region')->get();
+
+        foreach ($regionsAndPeoplesItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $regionsAndPeoplesItems = RegionsAndPeoples::whereIn('id', $request->input('region_ids'))->where('type', 'Region')
+            ->get();
+
+        $regionItems = $regionsAndPeoplesItems->map(function($item) {
+            return MapperRegion::toRegion($item);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Region delete_mark updated successfully',
+            'region' => $regionItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deletePeopleMark(Request $request){
+        $rules = [
+            'people_ids' => 'required|array',
+            'people_ids.*' => 'integer|exists:regions_and_peoples,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoplesItems = RegionsAndPeoples::whereIn('id', $request->input('people_ids'))->where('type', 'People')->get();
+
+        foreach ($regionsAndPeoplesItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $regionsAndPeoplesItems = RegionsAndPeoples::whereIn('id', $request->input('people_ids'))->where('type', 'People')
+            ->get();
+
+        $peopleItems = $regionsAndPeoplesItems->map(function($item) {
+            return MapperPeople::toPeople($item);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'People delete_mark updated successfully',
+            'people' => $peopleItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function deleteRegion($id){
         $regionsAndPeoples = RegionsAndPeoples::find($id);
 
@@ -312,6 +384,13 @@ class RegionsAndPeoplesController extends Controller
                 'success' => false,
                 'message' => 'Region not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$regionsAndPeoples->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         $regionsAndPeoples->delete();
@@ -337,6 +416,13 @@ class RegionsAndPeoplesController extends Controller
                 'success' => false,
                 'message' => 'People not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$regionsAndPeoples->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         $regionsAndPeoples->delete();

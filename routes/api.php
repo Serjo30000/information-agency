@@ -88,8 +88,10 @@ Route::get('statuses', [StatusController::class, 'allStatuses'])->middleware(['a
 Route::get('statusesPaginate', [StatusController::class, 'allStatusesPaginate'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('status/{id}', [StatusController::class, 'findStatus'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('users', [UserController::class, 'allUsers'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
+Route::get('usersListForPanel', [UserController::class, 'allUsersListForPanel'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('usersPaginate', [UserController::class, 'allUsersPaginate'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('user/{id}', [UserController::class, 'findUser'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
+Route::get('userForPanel/{id}', [UserController::class, 'findUserForPanel'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('rolesForUser/{id}', [UserController::class, 'findRoleForUser'])->middleware(['auth:sanctum', 'role:super_admin']);
 Route::get('videos', [VideoController::class, 'allVideos']);
 Route::get('videosForPanel', [VideoController::class, 'allVideosForPanel'])->middleware(['auth:sanctum', 'role:guest']);
@@ -101,6 +103,7 @@ Route::get('video/{id}', [VideoController::class, 'findVideo']);
 Route::get('videoForPanel/{id}', [VideoController::class, 'findVideoForPanel'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('randomSections', [ReportController::class, 'allRandomSections']);
 Route::get('priorityGrandNews', [ReportController::class, 'allPriorityGrandNews']);
+Route::get('allListForDelete', [ReportController::class, 'allListForDelete']);
 
 //auth
 Route::post('register', [AuthorizationController::class, 'register'])->middleware(['auth:sanctum', 'role:super_admin']);
@@ -114,13 +117,28 @@ Route::put('editAccount', [AuthorizationController::class, 'editAccount'])->midd
 
 //create
 Route::post('createVideo', [VideoController::class, 'createVideo'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createVideoForCheck', [VideoController::class, 'createVideoForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createNews', [NewsController::class, 'createNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createNewsForCheck', [NewsController::class, 'createNewsForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createGrandNews', [GrandNewsController::class, 'createGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createRegion', [RegionsAndPeoplesController::class, 'createRegion'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createPeople', [RegionsAndPeoplesController::class, 'createPeople'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createInterview', [PeopleContentController::class, 'createInterview'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createInterviewForCheck', [PeopleContentController::class, 'createInterviewForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createOpinion', [PeopleContentController::class, 'createOpinion'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createOpinionForCheck', [PeopleContentController::class, 'createOpinionForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createPointView', [PeopleContentController::class, 'createPointView'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createPointViewForCheck', [PeopleContentController::class, 'createPointViewForCheck'])->middleware(['auth:sanctum', 'role:editor']);
+
+//delete_mark
+Route::put('deleteVideoMark', [VideoController::class, 'deleteVideoMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deleteNewsMark', [NewsController::class, 'deleteNewsMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deleteUserMark', [UserController::class, 'deleteUserMark'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
+Route::put('deleteInterviewMark', [PeopleContentController::class, 'deleteInterviewMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deleteOpinionMark', [PeopleContentController::class, 'deleteOpinionMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deletePointViewMark', [PeopleContentController::class, 'deletePointViewMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deleteRegionMark', [RegionsAndPeoplesController::class, 'deleteRegionMark'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('deletePeopleMark', [RegionsAndPeoplesController::class, 'deletePeopleMark'])->middleware(['auth:sanctum', 'role:editor']);
 
 //delete
 Route::delete('deleteVideo/{id}', [VideoController::class, 'deleteVideo'])->middleware(['auth:sanctum', 'role:deleter']);
@@ -132,16 +150,22 @@ Route::delete('deleteInterview/{id}', [PeopleContentController::class, 'deleteIn
 Route::delete('deleteOpinion/{id}', [PeopleContentController::class, 'deleteOpinion'])->middleware(['auth:sanctum', 'role:deleter']);
 Route::delete('deletePointView/{id}', [PeopleContentController::class, 'deletePointView'])->middleware(['auth:sanctum', 'role:deleter']);
 Route::delete('deleteUser/{id}', [UserController::class, 'deleteUser'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
+Route::delete('deleteAllForPanel', [ReportController::class, 'deleteAllForPanel'])->middleware(['auth:sanctum', 'role:deleter']);
 
 //edit
 Route::put('editVideo/{id}', [VideoController::class, 'editVideo'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editVideoForCheck/{id}', [VideoController::class, 'editVideoForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editNews/{id}', [NewsController::class, 'editNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editNewsForCheck/{id}', [NewsController::class, 'editNewsForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editGrandNews/{id}', [GrandNewsController::class, 'editGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editRegion/{id}', [RegionsAndPeoplesController::class, 'editRegion'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editPeople/{id}', [RegionsAndPeoplesController::class, 'editPeople'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editInterview/{id}', [PeopleContentController::class, 'editInterview'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editInterviewForCheck/{id}', [PeopleContentController::class, 'editInterviewForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editOpinion/{id}', [PeopleContentController::class, 'editOpinion'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editOpinionForCheck/{id}', [PeopleContentController::class, 'editOpinionForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editPointView/{id}', [PeopleContentController::class, 'editPointView'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editPointViewForCheck/{id}', [PeopleContentController::class, 'editPointViewForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editUserForFields/{id}', [UserController::class, 'editUserForFields'])->middleware(['auth:sanctum', 'any.role:admin,super_admin']);
 Route::put('editUserForRole/{id}', [UserController::class, 'editUserForRole'])->middleware(['auth:sanctum', 'role:super_admin']);
 

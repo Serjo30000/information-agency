@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Services\StatusManagement\StatusMatcher;
 use App\Models\News;
 use App\Models\Status;
+use App\Models\User;
 use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -183,6 +184,7 @@ class VideoController extends Controller
                 'date_format:"Y-m-d H:i:s"',
             ],
             'sys_Comment' => 'nullable|string',
+            'user_id' => 'nullable|integer|exists:users,id',
         ];
 
         try {
@@ -194,7 +196,14 @@ class VideoController extends Controller
             ], 422, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $user = Auth::guard('sanctum')->user();
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
 
         if (!$user) {
             return response()->json([
@@ -231,6 +240,115 @@ class VideoController extends Controller
         ], 201, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function createVideoForCheck(Request $request){
+        $rules = [
+            'path_to_video' => 'required|string',
+            'title' => 'required|string',
+            'source' => 'required|string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'sys_Comment' => 'nullable|string',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $video = Video::create([
+            'path_to_video' => $request->input('path_to_video'),
+            'title' => $request->input('title'),
+            'source' => $request->input('source'),
+            'publication_date' => $request->input('publication_date'),
+            'sys_Comment' => $request->input('sys_Comment'),
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $videoWithStatus = Video::with('status')->find($video->id);
+
+        return response()->json([
+            'success' => true,
+            'video' => $videoWithStatus,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deleteVideoMark(Request $request){
+        $rules = [
+            'video_ids' => 'required|array',
+            'video_ids.*' => 'integer|exists:videos,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $videosItems = Video::whereIn('id', $request->input('video_ids'))->where('user_id', $user->id)->get();
+
+        foreach ($videosItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $videosItems = Video::with('status')
+            ->whereIn('id', $request->input('video_ids'))->where('user_id', $user->id)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Video delete_mark updated successfully',
+            'video' => $videosItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function deleteVideo($id){
         $video = Video::find($id);
 
@@ -239,6 +357,13 @@ class VideoController extends Controller
                 'success' => false,
                 'message' => 'Video not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$video->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         $video->delete();
@@ -288,6 +413,7 @@ class VideoController extends Controller
                     'date_format:"Y-m-d H:i:s"',
                 ],
                 'sys_Comment' => 'nullable|string',
+                'user_id' => 'nullable|integer|exists:users,id',
             ];
 
             try {
@@ -299,11 +425,120 @@ class VideoController extends Controller
                 ], 422, [], JSON_UNESCAPED_UNICODE);
             }
 
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
             $video->path_to_video = $request->input('path_to_video');
             $video->title = $request->input('title');
             $video->source = $request->input('source');
             $video->publication_date = $request->input('publication_date');
             $video->sys_Comment = $request->input('sys_Comment');
+            $video->user_id = $user->id;
+
+            $video->save();
+
+            $videoWithStatus = Video::with('status')->find($video->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Video updated successfully',
+                'video' => $videoWithStatus,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit video'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editVideoForCheck($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $video = Video::find($id);
+
+        if (!$video) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Video not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($video->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $video->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'path_to_video' => 'required|string',
+                'title' => 'required|string',
+                'source' => 'required|string',
+                'publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'sys_Comment' => 'nullable|string',
+                'user_id' => 'nullable|integer|exists:users,id',
+            ];
+
+            try {
+                $request->validate($rules);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $video->path_to_video = $request->input('path_to_video');
+            $video->title = $request->input('title');
+            $video->source = $request->input('source');
+            $video->publication_date = $request->input('publication_date');
+            $video->sys_Comment = $request->input('sys_Comment');
+            $video->user_id = $user->id;
+            $video->status_id = $status->id;
 
             $video->save();
 

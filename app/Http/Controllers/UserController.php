@@ -21,6 +21,13 @@ class UserController extends Controller
         return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allUsersListForPanel()
+    {
+        $users = User::select('id', 'login')->get();
+
+        return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function allUsersPaginate(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -75,6 +82,51 @@ class UserController extends Controller
         }
     }
 
+    public function findUserForPanel($id){
+        $user = User::select('id', 'login')->find($id);
+
+        if ($user){
+            return response()->json($user, 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json(['message' => 'User not found'], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function deleteUserMark(Request $request){
+        $rules = [
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $usersItems = User::whereIn('id', $request->input('user_ids'))->get();
+
+        foreach ($usersItems as $item) {
+            $item->delete_mark = !$item->delete_mark;
+            $item->save();
+        }
+
+        $usersItems = User::whereIn('id', $request->input('user_ids'))
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User delete_mark updated successfully',
+            'user' => $usersItems,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+
+
     public function deleteUser($id){
         $userAuth = Auth::guard('sanctum')->user();
 
@@ -92,6 +144,13 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!$user->delete_mark){
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot be deleted'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
         }
 
         if ($userAuth->hasRole('admin') && !$userAuth->hasRole('super_admin')){
