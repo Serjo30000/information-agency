@@ -217,6 +217,7 @@ class GrandNewsController extends Controller
             })
             ->leftJoin('news', 'grand_news.news_id', '=', 'news.id')
             ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+            ->groupBy('grand_news.id', 'news.id', 'regions_and_peoples.id')
             ->orderBy($sortField, $sortDirection)
             ->select('grand_news.*')
             ->get();
@@ -272,6 +273,7 @@ class GrandNewsController extends Controller
             })
             ->leftJoin('news', 'grand_news.news_id', '=', 'news.id')
             ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+            ->groupBy('grand_news.id', 'news.id', 'regions_and_peoples.id')
             ->orderBy($sortField, $sortDirection)
             ->select('grand_news.*')
             ->get();
