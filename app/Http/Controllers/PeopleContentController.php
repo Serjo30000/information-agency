@@ -486,9 +486,9 @@ class PeopleContentController extends Controller
                     });
                 })
                 ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('people_contents.id', 'regions_and_peoples.id')
                 ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
                 ->select('people_contents.*')
-                ->groupBy('people_contents.id')
                 ->get();
         }
         else{
@@ -570,9 +570,9 @@ class PeopleContentController extends Controller
                     });
                 })
                 ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('people_contents.id', 'regions_and_peoples.id')
                 ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
                 ->select('people_contents.*')
-                ->groupBy('people_contents.id')
                 ->get();
         }
         else{
@@ -653,9 +653,9 @@ class PeopleContentController extends Controller
                     });
                 })
                 ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('people_contents.id', 'regions_and_peoples.id')
                 ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
                 ->select('people_contents.*')
-                ->groupBy('people_contents.id')
                 ->get();
         }
         else{

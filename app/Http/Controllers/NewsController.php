@@ -221,9 +221,9 @@ class NewsController extends Controller
                     });
                 })
                 ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('news.id', 'regions_and_peoples.id')
                 ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
                 ->select('news.*')
-                ->groupBy('news.id')
                 ->get();
         } else {
             $news = News::with(['status', 'regionsAndPeoples'])
