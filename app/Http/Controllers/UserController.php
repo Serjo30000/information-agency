@@ -71,6 +71,25 @@ class UserController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allUsersBySearchAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $sortField = $request->input('sort_field', 'login');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $users = User::when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('fio', 'like', "%{$search}%")
+                        ->orWhere('login', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortField, $sortDirection)
+            ->get();
+
+        return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function findUser($id){
         $user = User::find($id);
 

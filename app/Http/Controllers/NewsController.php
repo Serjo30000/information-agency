@@ -178,47 +178,82 @@ class NewsController extends Controller
         return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function allNewsPaginateForPanel(Request $request)
+    public function allNewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
-        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
 
-        if ($perPage<=0){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Paginate not found'
-            ], 404, [], JSON_UNESCAPED_UNICODE);
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
         }
 
-        $news = News::with(['status', 'regionsAndPeoples'])->get();
-
-        if ($startDate) {
-            $startDate = Carbon::parse($startDate)->startOfDay();
-            $news = $news->filter(function($newsOne) use ($startDate) {
-                return Carbon::parse($newsOne->publication_date)->greaterThanOrEqualTo($startDate);
-            });
+        if ($sortField === 'fio_or_name_region') {
+            $news = News::with(['status', 'regionsAndPeoples'])
+                ->where('news.user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('news.title', 'like', "%{$search}%")
+                            ->orWhere('news.source', 'like', "%{$search}%")
+                            ->orWhere('news.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('news.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('news.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('news.*')
+                ->groupBy('news.id')
+                ->get();
+        } else {
+            $news = News::with(['status', 'regionsAndPeoples'])
+                ->where('user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('source', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
         }
 
-        if ($endDate) {
-            $endDate = Carbon::parse($endDate)->endOfDay();
-            $news = $news->filter(function($newsOne) use ($endDate) {
-                return Carbon::parse($newsOne->publication_date)->lessThanOrEqualTo($endDate);
-            });
-        }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-        $paginatedDTO = new LengthAwarePaginator(
-            $currentItems,
-            $news->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+        return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findNewsOneForPanel($id){

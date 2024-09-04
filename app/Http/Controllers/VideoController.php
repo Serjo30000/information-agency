@@ -162,6 +162,50 @@ class VideoController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allVideosBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $videos = Video::with('status')
+            ->where('user_id', $user->id)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('source', 'like', "%{$search}%")
+                        ->orWhere('sys_Comment', 'like', "%{$search}%");
+                });
+            })
+            ->when($startDate, function ($query, $startDate) {
+                $query->whereDate('publication_date', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->whereDate('publication_date', '<=', $endDate);
+            })
+            ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                    $query->whereIn('status', $selectedStatuses);
+                });
+            })
+            ->orderBy($sortField, $sortDirection)
+            ->get();
+
+        return response()->json($videos, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function findVideoForPanel($id){
         $video = Video::with('status')->find($id);
 

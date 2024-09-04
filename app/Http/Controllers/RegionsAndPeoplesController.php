@@ -129,6 +129,39 @@ class RegionsAndPeoplesController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allPeoplesBySearchAndFiltersAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $sortField = $request->input('sort_field', 'date_birth_or_date_foundation');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $regionsAndPeoplesForPeoples = RegionsAndPeoples::where('type', 'People')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('fio_or_name_region', 'like', "%{$search}%")
+                        ->orWhere('position_or_type_region', 'like', "%{$search}%")
+                        ->orWhere('place_work', 'like', "%{$search}%")
+                        ->orWhere('sys_Comment', 'like', "%{$search}%");
+                });
+            })
+            ->when($startDate, function ($query, $startDate) {
+                $query->whereDate('date_birth_or_date_foundation', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->whereDate('date_birth_or_date_foundation', '<=', $endDate);
+            })
+            ->orderBy($sortField, $sortDirection)
+            ->get();
+
+        $peoples = $regionsAndPeoplesForPeoples->map(function ($people) {
+            return MapperPeople::toPeople($people);
+        });
+
+        return response()->json($peoples, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function findPeople($id){
         $people = FilterPeople::findPeopleByFilter($id);
 
@@ -202,6 +235,38 @@ class RegionsAndPeoplesController extends Controller
         );
 
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allRegionsBySearchAndFiltersAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $sortField = $request->input('sort_field', 'date_birth_or_date_foundation');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $regionsAndPeoplesForRegions = RegionsAndPeoples::where('type', 'Region')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('fio_or_name_region', 'like', "%{$search}%")
+                        ->orWhere('position_or_type_region', 'like', "%{$search}%")
+                        ->orWhere('sys_Comment', 'like', "%{$search}%");
+                });
+            })
+            ->when($startDate, function ($query, $startDate) {
+                $query->whereDate('date_birth_or_date_foundation', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->whereDate('date_birth_or_date_foundation', '<=', $endDate);
+            })
+            ->orderBy($sortField, $sortDirection)
+            ->get();
+
+        $regions = $regionsAndPeoplesForRegions->map(function ($region) {
+            return MapperRegion::toRegion($region);
+        });
+
+        return response()->json($regions, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findRegion($id){

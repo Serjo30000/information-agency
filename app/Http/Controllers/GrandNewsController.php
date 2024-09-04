@@ -170,6 +170,115 @@ class GrandNewsController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allGrandNewsBySearchAndFiltersAndStatusesAndSortAndIsActiveForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::with(['news.regionsAndPeoples', 'news.status'])
+            ->where('grand_news.isActivate', 1)
+            ->whereHas('news', function ($query) use ($user, $search, $startDate, $endDate, $selectedStatuses) {
+                $query->where('news.user_id', $user->id);
+                if (!empty($selectedStatuses)) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                }
+                $query->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('news.title', 'like', "%{$search}%")
+                            ->orWhere('news.source', 'like', "%{$search}%")
+                            ->orWhere('grand_news.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                });
+                $query->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('news.publication_date', '>=', $startDate);
+                });
+
+                $query->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('news.publication_date', '<=', $endDate);
+                });
+            })
+            ->leftJoin('news', 'grand_news.news_id', '=', 'news.id')
+            ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+            ->orderBy($sortField, $sortDirection)
+            ->select('grand_news.*')
+            ->get();
+
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allGrandNewsBySearchAndFiltersAndStatusesAndSortAndIsNotActiveForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $currentDate = $request->input('current_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::with(['news.regionsAndPeoples', 'news.status'])
+            ->where('grand_news.isActivate', 0)
+            ->whereHas('news', function ($query) use ($user, $search, $currentDate, $selectedStatuses) {
+                $query->where('news.user_id', $user->id);
+                if (!empty($selectedStatuses)) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                }
+                $query->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('news.title', 'like', "%{$search}%")
+                            ->orWhere('news.source', 'like', "%{$search}%")
+                            ->orWhere('grand_news.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                });
+                $query->when($currentDate, function ($query, $currentDate) {
+                    $year = date('Y', strtotime($currentDate));
+                    $month = date('m', strtotime($currentDate));
+                    $day = date('d', strtotime($currentDate));
+
+                    $query->whereYear('news.publication_date', $year)
+                        ->whereMonth('news.publication_date', $month)
+                        ->whereDay('news.publication_date', $day);
+                });
+            })
+            ->leftJoin('news', 'grand_news.news_id', '=', 'news.id')
+            ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+            ->orderBy($sortField, $sortDirection)
+            ->select('grand_news.*')
+            ->get();
+
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function findGrandNewsOneForPanel($id){
         $grandNewsOne = GrandNews::with('news')->find($id);
 

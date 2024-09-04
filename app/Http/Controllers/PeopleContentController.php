@@ -246,49 +246,6 @@ class PeopleContentController extends Controller
         return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function allInterviewsPaginateForPanel(Request $request)
-    {
-        $perPage = $request->input('per_page', 10);
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if ($perPage<=0){
-            return response()->json([
-                'success' => false,
-                'message' => 'Paginate not found'
-            ], 404, [], JSON_UNESCAPED_UNICODE);
-        }
-
-        $interviews = collect(FilterInterview::allInterviewsByFilterForPanel());
-
-        if ($startDate) {
-            $startDate = Carbon::parse($startDate)->startOfDay();
-            $interviews = $interviews->filter(function($interview) use ($startDate) {
-                return Carbon::parse($interview->publication_date)->greaterThanOrEqualTo($startDate);
-            });
-        }
-
-        if ($endDate) {
-            $endDate = Carbon::parse($endDate)->endOfDay();
-            $interviews = $interviews->filter(function($interview) use ($endDate) {
-                return Carbon::parse($interview->publication_date)->lessThanOrEqualTo($endDate);
-            });
-        }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $currentItems = $interviews->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-        $paginatedDTO = new LengthAwarePaginator(
-            $currentItems,
-            $interviews->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
-    }
-
     public function findInterviewForPanel($id){
         $interview = FilterInterview::findInterviewByFilterForPanel($id);
 
@@ -385,49 +342,6 @@ class PeopleContentController extends Controller
         return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function allOpinionsPaginateForPanel(Request $request)
-    {
-        $perPage = $request->input('per_page', 10);
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if ($perPage<=0){
-            return response()->json([
-                'success' => false,
-                'message' => 'Paginate not found'
-            ], 404, [], JSON_UNESCAPED_UNICODE);
-        }
-
-        $opinions = collect(FilterOpinion::allOpinionsByFilterForPanel());
-
-        if ($startDate) {
-            $startDate = Carbon::parse($startDate)->startOfDay();
-            $opinions = $opinions->filter(function($opinion) use ($startDate) {
-                return Carbon::parse($opinion->publication_date)->greaterThanOrEqualTo($startDate);
-            });
-        }
-
-        if ($endDate) {
-            $endDate = Carbon::parse($endDate)->endOfDay();
-            $opinions = $opinions->filter(function($opinion) use ($endDate) {
-                return Carbon::parse($opinion->publication_date)->lessThanOrEqualTo($endDate);
-            });
-        }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $currentItems = $opinions->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-        $paginatedDTO = new LengthAwarePaginator(
-            $currentItems,
-            $opinions->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
-    }
-
     public function findOpinionForPanel($id){
         $opinion = FilterOpinion::findOpinionByFilterForPanel($id);
 
@@ -517,49 +431,6 @@ class PeopleContentController extends Controller
         return response()->json($pointViews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function allPointViewsPaginateForPanel(Request $request)
-    {
-        $perPage = $request->input('per_page', 10);
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if ($perPage<=0){
-            return response()->json([
-                'success' => false,
-                'message' => 'Paginate not found'
-            ], 404, [], JSON_UNESCAPED_UNICODE);
-        }
-
-        $pointViews = collect(FilterPointView::allPointViewsByFilterForPanel());
-
-        if ($startDate) {
-            $startDate = Carbon::parse($startDate)->startOfDay();
-            $pointViews = $pointViews->filter(function($pointView) use ($startDate) {
-                return Carbon::parse($pointView->created_at)->greaterThanOrEqualTo($startDate);
-            });
-        }
-
-        if ($endDate) {
-            $endDate = Carbon::parse($endDate)->endOfDay();
-            $pointViews = $pointViews->filter(function($pointView) use ($endDate) {
-                return Carbon::parse($pointView->created_at)->lessThanOrEqualTo($endDate);
-            });
-        }
-
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $currentItems = $pointViews->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-        $paginatedDTO = new LengthAwarePaginator(
-            $currentItems,
-            $pointViews->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
-    }
-
     public function findPointViewForPanel($id){
         $pointView = FilterPointView::findPointViewByFilterForPanel($id);
 
@@ -569,6 +440,257 @@ class PeopleContentController extends Controller
         else{
             return response()->json(['message' => 'PointView not found'], 404, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function allInterviewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region'){
+            $peopleContentForInterviews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('people_contents.type','Interview')
+                ->where('people_contents.user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('people_contents.title', 'like', "%{$search}%")
+                            ->orWhere('people_contents.source', 'like', "%{$search}%")
+                            ->orWhere('people_contents.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('people_contents.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('people_contents.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('people_contents.*')
+                ->groupBy('people_contents.id')
+                ->get();
+        }
+        else{
+            $peopleContentForInterviews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('type','Interview')
+                ->where('user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('source', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $interviews = $peopleContentForInterviews->map(function ($interview) {
+            return MapperInterview::toInterview($interview);
+        });
+
+        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allOpinionsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region'){
+            $peopleContentForOpinions = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('people_contents.type','Opinion')
+                ->where('people_contents.user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('people_contents.title', 'like', "%{$search}%")
+                            ->orWhere('people_contents.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('people_contents.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('people_contents.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('people_contents.*')
+                ->groupBy('people_contents.id')
+                ->get();
+        }
+        else{
+            $peopleContentForOpinions = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('type','Opinion')
+                ->where('user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $opinions = $peopleContentForOpinions->map(function ($opinion) {
+            return MapperOpinion::toOpinion($opinion);
+        });
+
+        return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allPointViewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
+    {
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'updated_at');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region'){
+            $peopleContentForPointViews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('people_contents.type','PointView')
+                ->where('people_contents.user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('people_contents.title', 'like', "%{$search}%")
+                            ->orWhere('people_contents.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('people_contents.updated_at', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('people_contents.updated_at', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('people_contents.*')
+                ->groupBy('people_contents.id')
+                ->get();
+        }
+        else{
+            $peopleContentForPointViews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('type','PointView')
+                ->where('user_id', $user->id)
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('updated_at', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('updated_at', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $pointViews = $peopleContentForPointViews->map(function ($pointView) {
+            return MapperPointView::toPointView($pointView);
+        });
+
+        return response()->json($pointViews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function createInterview(Request $request){
