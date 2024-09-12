@@ -164,6 +164,7 @@ Route::put('editVideoForCheck/{id}', [VideoController::class, 'editVideoForCheck
 Route::put('editNews/{id}', [NewsController::class, 'editNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editNewsForCheck/{id}', [NewsController::class, 'editNewsForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editGrandNews/{id}', [GrandNewsController::class, 'editGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::put('editNewsWithGrandNews/{id}', [GrandNewsController::class, 'editNewsWithGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editRegion/{id}', [RegionsAndPeoplesController::class, 'editRegion'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editPeople/{id}', [RegionsAndPeoplesController::class, 'editPeople'])->middleware(['auth:sanctum', 'role:editor']);
 Route::put('editInterview/{id}', [PeopleContentController::class, 'editInterview'])->middleware(['auth:sanctum', 'role:editor']);

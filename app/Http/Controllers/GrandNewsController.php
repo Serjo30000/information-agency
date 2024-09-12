@@ -633,4 +633,153 @@ class GrandNewsController extends Controller
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
     }
+
+    public function editNewsWithGrandNews($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::find($id);
+
+        if (!$grandNews) {
+            return response()->json([
+                'success' => false,
+                'message' => 'GrandNews not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::find($grandNews->news_id);
+
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($news->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->id == $news->user_id && $status->status == "Редактируется"){
+            $rules = [
+                'start_publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'end_publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'priority' => 'required|integer|min:0',
+                'sys_Comment' => 'nullable|string',
+                'isActivate' => 'required|boolean',
+                'news_id' => 'required|integer|exists:news,id',
+                'path_to_image_or_video' => 'required|string',
+                'title' => 'required|string',
+                'content' => 'required|string',
+                'source' => 'nullable|string',
+                'publication_date' => [
+                    'required',
+                    'string',
+                    'date_format:"Y-m-d H:i:s"',
+                ],
+                'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+                'user_id' => 'nullable|integer|exists:users,id',
+            ];
+
+            $startDate = $request->input('start_publication_date');
+            $endDate = $request->input('end_publication_date');
+
+            $dateRangeRule = new DateRange($startDate, $endDate);
+
+            try {
+                $request->validate($rules);
+
+                if (!$dateRangeRule->passes('date_range', null)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $dateRangeRule->message()
+                    ], 422, [], JSON_UNESCAPED_UNICODE);
+                }
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+            if (!$regionsAndPeoples) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Region and People record not found'
+                ], 404, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($regionsAndPeoples->type !== 'Region') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid type. Expected "Region".'
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            if ($request->input('user_id') != null && $request->input('user_id') != 0){
+                $user = User::where('id', $request->input('user_id'))->first();
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401, [], JSON_UNESCAPED_UNICODE);
+            }
+
+            $news->path_to_image_or_video = $request->input('path_to_image_or_video');
+            $news->title = $request->input('title');
+            $news->content = $request->input('content');
+            $news->source = $request->input('source');
+            $news->publication_date = $request->input('publication_date');
+            $news->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+            $news->user_id = $user->id;
+
+            $news->save();
+
+            $grandNews->start_publication_date = $request->input('start_publication_date');
+            $grandNews->end_publication_date = $request->input('end_publication_date');
+            $grandNews->priority = $request->input('priority');
+            $grandNews->sys_Comment = $request->input('sys_Comment');
+            $grandNews->isActivate = $request->input('isActivate');
+            $grandNews->news_id = $request->input('news_id');
+
+            $grandNews->save();
+
+            $grandNewsWithNews = GrandNews::with('news')->find($grandNews->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'GrandNews updated successfully',
+                'grandNews' => $grandNewsWithNews,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit grandNews'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
 }
