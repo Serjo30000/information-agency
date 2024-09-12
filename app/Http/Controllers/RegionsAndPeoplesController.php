@@ -131,11 +131,19 @@ class RegionsAndPeoplesController extends Controller
 
     public function allPeoplesBySearchAndFiltersAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $sortField = $request->input('sort_field', 'date_birth_or_date_foundation');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $regionsAndPeoplesForPeoples = RegionsAndPeoples::where('type', 'People')
             ->when($search, function ($query, $search) {
@@ -159,7 +167,18 @@ class RegionsAndPeoplesController extends Controller
             return MapperPeople::toPeople($people);
         });
 
-        return response()->json($peoples, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $peoples->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $peoples->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findPeople($id){
@@ -239,11 +258,19 @@ class RegionsAndPeoplesController extends Controller
 
     public function allRegionsBySearchAndFiltersAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $sortField = $request->input('sort_field', 'date_birth_or_date_foundation');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $regionsAndPeoplesForRegions = RegionsAndPeoples::where('type', 'Region')
             ->when($search, function ($query, $search) {
@@ -266,7 +293,18 @@ class RegionsAndPeoplesController extends Controller
             return MapperRegion::toRegion($region);
         });
 
-        return response()->json($regions, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $regions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $regions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findRegion($id){

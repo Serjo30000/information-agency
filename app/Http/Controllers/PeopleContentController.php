@@ -444,12 +444,20 @@ class PeopleContentController extends Controller
 
     public function allInterviewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -524,17 +532,36 @@ class PeopleContentController extends Controller
             return MapperInterview::toInterview($interview);
         });
 
-        return response()->json($interviews, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $interviews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $interviews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allOpinionsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -607,17 +634,36 @@ class PeopleContentController extends Controller
             return MapperOpinion::toOpinion($opinion);
         });
 
-        return response()->json($opinions, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $opinions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $opinions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allPointViewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'updated_at');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -690,7 +736,18 @@ class PeopleContentController extends Controller
             return MapperPointView::toPointView($pointView);
         });
 
-        return response()->json($pointViews, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $pointViews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $pointViews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function createInterview(Request $request){

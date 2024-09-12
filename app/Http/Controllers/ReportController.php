@@ -117,14 +117,6 @@ class ReportController extends Controller
             return MapperInterview::toInterview($interview);
         });
 
-        $peopleContentForPointViews = PeopleContent::where('type','PointView')->when($search, function ($query, $search) {
-            $query->where('title', 'like', '%' . $search . '%');
-        })->where('delete_mark',1)->get();
-
-        $pointViews = $peopleContentForPointViews->map(function ($pointView) {
-            return MapperPointView::toPointView($pointView);
-        });
-
         $peopleContentForOpinions = PeopleContent::where('type','Opinion')->when($search, function ($query, $search) {
             $query->where('title', 'like', '%' . $search . '%');
         })->where('delete_mark',1)->get();
@@ -149,7 +141,6 @@ class ReportController extends Controller
             'Регионы' => $regions,
             'Люди' => $peoples,
             'Интервью' => $interviews,
-            'Точки зрения' => $pointViews,
             'Мнения' => $opinions,
             'Пользователи' => $users,
             'Видео' => $videos,
@@ -168,8 +159,6 @@ class ReportController extends Controller
             'people_ids.*' => 'integer|exists:regions_and_peoples,id',
             'interview_ids' => 'nullable|array',
             'interview_ids.*' => 'integer|exists:people_contents,id',
-            'point_of_view_ids' => 'nullable|array',
-            'point_of_view_ids.*' => 'integer|exists:people_contents,id',
             'opinion_ids' => 'nullable|array',
             'opinion_ids.*' => 'integer|exists:people_contents,id',
             'user_ids' => 'nullable|array',
@@ -211,13 +200,6 @@ class ReportController extends Controller
         if ($request->input('interview_ids')!=null){
             PeopleContent::whereIn('id', $request->input('interview_ids'))
                 ->where('type','Interview')
-                ->where('delete_mark', 1)
-                ->delete();
-        }
-
-        if ($request->input('point_of_view_ids')!=null){
-            PeopleContent::whereIn('id', $request->input('point_of_view_ids'))
-                ->where('type','PointView')
                 ->where('delete_mark', 1)
                 ->delete();
         }

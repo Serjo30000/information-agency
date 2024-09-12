@@ -180,12 +180,20 @@ class NewsController extends Controller
 
     public function allNewsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -253,7 +261,18 @@ class NewsController extends Controller
                 ->get();
         }
 
-        return response()->json($news, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $news->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findNewsOneForPanel($id){

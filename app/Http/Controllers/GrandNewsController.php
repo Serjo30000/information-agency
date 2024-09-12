@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\GrandNews;
 use App\Models\News;
+use App\Models\RegionsAndPeoples;
 use App\Models\Status;
+use App\Models\User;
 use App\Rules\DateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -227,11 +229,19 @@ class GrandNewsController extends Controller
 
     public function allGrandNewsBySearchAndFiltersAndStatusesAndSortAndIsNotActiveForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $currentDate = $request->input('current_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -278,7 +288,18 @@ class GrandNewsController extends Controller
             ->select('grand_news.*')
             ->get();
 
-        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $grandNews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $grandNews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findGrandNewsOneForPanel($id){
@@ -355,6 +376,134 @@ class GrandNewsController extends Controller
             'sys_Comment' => $request->input('sys_Comment'),
             'isActivate' => $request->input('isActivate'),
             'news_id' => $request->input('news_id'),
+        ]);
+
+        $grandNewsWithNews = GrandNews::with('news')->find($grandNews->id);
+
+        return response()->json([
+            'success' => true,
+            'grandNews' => $grandNewsWithNews,
+            'message' => 'Create successful'
+        ], 201, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function createNewsWithGrandNews(Request $request){
+        $rules = [
+            'path_to_image_or_video' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'nullable|string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'start_publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'end_publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'priority' => 'required|integer|min:0',
+            'sys_Comment' => 'nullable|string',
+            'isActivate' => 'required|boolean',
+        ];
+
+        $startDate = $request->input('start_publication_date');
+        $endDate = $request->input('end_publication_date');
+
+        $dateRangeRule = new DateRange($startDate, $endDate);
+
+        try {
+            $request->validate($rules);
+
+            if (!$dateRangeRule->passes('date_range', null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $dateRangeRule->message()
+                ], 422, [], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "Region".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = null;
+
+        if ($request->input('user_id') == null || $request->input('user_id') == 0){
+            $user = Auth::guard('sanctum')->user();
+        }
+        else{
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::create([
+            'path_to_image_or_video' => $request->input('path_to_image_or_video'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'source' => $request->input('source'),
+            'publication_date' => $request->input('publication_date'),
+            'user_id' => $user->id,
+            'regions_and_peoples_id' => $request->input('regions_and_peoples_id'),
+            'status_id' => $status->id,
+        ]);
+
+        $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
+        if (!$newsWithStatusAndRegionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $grandNews = GrandNews::create([
+            'start_publication_date' => $request->input('start_publication_date'),
+            'end_publication_date' => $request->input('end_publication_date'),
+            'priority' => $request->input('priority'),
+            'sys_Comment' => $request->input('sys_Comment'),
+            'isActivate' => $request->input('isActivate'),
+            'news_id' => $newsWithStatusAndRegionsAndPeoples->id,
         ]);
 
         $grandNewsWithNews = GrandNews::with('news')->find($grandNews->id);

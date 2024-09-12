@@ -73,9 +73,17 @@ class UserController extends Controller
 
     public function allUsersBySearchAndSortForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $sortField = $request->input('sort_field', 'login');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $users = User::when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
@@ -87,7 +95,18 @@ class UserController extends Controller
             ->orderBy($sortField, $sortDirection)
             ->get();
 
-        return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $users->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $users->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function findUser($id){

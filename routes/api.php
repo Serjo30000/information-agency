@@ -126,6 +126,7 @@ Route::post('createVideoForCheck', [VideoController::class, 'createVideoForCheck
 Route::post('createNews', [NewsController::class, 'createNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createNewsForCheck', [NewsController::class, 'createNewsForCheck'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createGrandNews', [GrandNewsController::class, 'createGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
+Route::post('createNewsWithGrandNews', [GrandNewsController::class, 'createNewsWithGrandNews'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createRegion', [RegionsAndPeoplesController::class, 'createRegion'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createPeople', [RegionsAndPeoplesController::class, 'createPeople'])->middleware(['auth:sanctum', 'role:editor']);
 Route::post('createInterview', [PeopleContentController::class, 'createInterview'])->middleware(['auth:sanctum', 'role:editor']);
