@@ -40,6 +40,8 @@ Route::get('grandNewsOneForPanel/{id}', [GrandNewsController::class, 'findGrandN
 Route::get('news', [NewsController::class, 'allNews']);
 Route::get('newsForPanel', [NewsController::class, 'allNewsForPanel'])->middleware(['auth:sanctum', 'role:guest']);
 Route::get('newsPaginateAndSearch', [NewsController::class, 'allNewsPaginateAndSearch']);
+Route::get('newsPaginateByFilterFederalRegion', [NewsController::class, 'allNewsPaginateByFilterFederalRegion']);
+Route::get('newsPaginateByFilterRegion', [NewsController::class, 'allNewsPaginateByFilterRegion']);
 Route::get('newsTopTenByRegion/{id_region}', [NewsController::class, 'listNewsTopTenByRegion']);
 Route::get('newsPaginate', [NewsController::class, 'allNewsPaginate']);
 Route::get('newsBySearchAndFiltersAndStatusesAndSortForPanel', [NewsController::class, 'allNewsBySearchAndFiltersAndStatusesAndSortForPanel'])->middleware(['auth:sanctum', 'role:guest']);

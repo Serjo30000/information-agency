@@ -90,6 +90,96 @@ class NewsController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allNewsPaginateByFilterFederalRegion(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::whereHas('status', function ($query) {
+            $query->where('status', 'Опубликовано');
+        })->with(['status', 'regionsAndPeoples'])->where('regions_and_peoples_id', '>',0)->where('regions_and_peoples_id', '<=',4)->get();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $news = $news->filter(function($newsOne) use ($startDate) {
+                return Carbon::parse($newsOne->publication_date)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $news = $news->filter(function($newsOne) use ($endDate) {
+                return Carbon::parse($newsOne->publication_date)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $news->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allNewsPaginateByFilterRegion(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::whereHas('status', function ($query) {
+            $query->where('status', 'Опубликовано');
+        })->with(['status', 'regionsAndPeoples'])->where('regions_and_peoples_id', '>',4)->get();
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $news = $news->filter(function($newsOne) use ($startDate) {
+                return Carbon::parse($newsOne->publication_date)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $news = $news->filter(function($newsOne) use ($endDate) {
+                return Carbon::parse($newsOne->publication_date)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $news->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function allNewsPaginateAndSearch(Request $request)
     {
         $perPage = $request->input('per_page', 10);
