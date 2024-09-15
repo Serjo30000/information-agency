@@ -365,6 +365,98 @@ class NewsController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allNewsBySearchAndFiltersAndStatusesAndSortForPanelCensor(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region') {
+            $news = News::with(['status', 'regionsAndPeoples'])
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('news.title', 'like', "%{$search}%")
+                            ->orWhere('news.source', 'like', "%{$search}%")
+                            ->orWhere('news.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('news.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('news.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('statuses.status', '!=', 'Редактируется');
+                })
+                ->leftJoin('regions_and_peoples', 'news.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('news.id', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('news.*')
+                ->get();
+        } else {
+            $news = News::with(['status', 'regionsAndPeoples'])
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('source', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('status', '!=', 'Редактируется');
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $news->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $news->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function findNewsOneForPanel($id){
         $newsOne = News::with(['status', 'regionsAndPeoples'])->find($id);
 
@@ -724,6 +816,148 @@ class NewsController extends Controller
         }
     }
 
+    public function editNewsCensor($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news = News::find($id);
+
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($news->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image_or_video' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'nullable|string',
+            'sys_Comment' => 'nullable|string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "Region".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $news->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news->path_to_image_or_video = $request->input('path_to_image_or_video');
+        $news->title = $request->input('title');
+        $news->content = $request->input('content');
+        $news->source = $request->input('source');
+        $news->publication_date = $request->input('publication_date');
+        $news->sys_Comment = $request->input('sys_Comment');
+        $news->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $news->user_id = $user->id;
+        $news->status_id = $status->id;
+
+        $news->save();
+
+        $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
+        if ($is_status){
+            return response()->json([
+                'success' => true,
+                'message' => 'News updated successfully',
+                'news' => $newsWithStatusAndRegionsAndPeoples,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
     public function editNewsForCheck($id, Request $request){
         $user = Auth::guard('sanctum')->user();
 
@@ -839,6 +1073,106 @@ class NewsController extends Controller
                 'message' => 'Cannot edit news'
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function editNewsForCheckCensor($id, Request $request){
+        $news = News::find($id);
+
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($news->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image_or_video' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'nullable|string',
+            'sys_Comment' => 'nullable|string',
+            'publication_date' => [
+                'required',
+                'string',
+                'date_format:"Y-m-d H:i:s"',
+            ],
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'Region') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "Region".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $news->path_to_image_or_video = $request->input('path_to_image_or_video');
+        $news->title = $request->input('title');
+        $news->content = $request->input('content');
+        $news->source = $request->input('source');
+        $news->publication_date = $request->input('publication_date');
+        $news->sys_Comment = $request->input('sys_Comment');
+        $news->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $news->user_id = $user->id;
+        $news->status_id = $status->id;
+
+        $news->save();
+
+        $newsWithStatusAndRegionsAndPeoples = News::with(['status', 'regionsAndPeoples'])->find($news->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'News updated successfully',
+            'news' => $newsWithStatusAndRegionsAndPeoples,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function editNewsByStatus($id, Request $request){

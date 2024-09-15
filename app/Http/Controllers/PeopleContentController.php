@@ -546,6 +546,105 @@ class PeopleContentController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allInterviewsBySearchAndFiltersAndStatusesAndSortForPanelCensor(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region'){
+            $peopleContentForInterviews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('people_contents.type','Interview')
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('people_contents.title', 'like', "%{$search}%")
+                            ->orWhere('people_contents.source', 'like', "%{$search}%")
+                            ->orWhere('people_contents.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('people_contents.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('people_contents.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('statuses.status', '!=', 'Редактируется');
+                })
+                ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('people_contents.id', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('people_contents.*')
+                ->get();
+        }
+        else{
+            $peopleContentForInterviews = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('type','Interview')
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('source', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('status', '!=', 'Редактируется');
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $interviews = $peopleContentForInterviews->map(function ($interview) {
+            return MapperInterview::toInterview($interview);
+        });
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $interviews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $interviews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function allOpinionsBySearchAndFiltersAndStatusesAndSortForPanel(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -625,6 +724,103 @@ class PeopleContentController extends Controller
                     $query->whereHas('status', function ($query) use ($selectedStatuses) {
                         $query->whereIn('status', $selectedStatuses);
                     });
+                })
+                ->orderBy($sortField, $sortDirection)
+                ->get();
+        }
+
+        $opinions = $peopleContentForOpinions->map(function ($opinion) {
+            return MapperOpinion::toOpinion($opinion);
+        });
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $opinions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $opinions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allOpinionsBySearchAndFiltersAndStatusesAndSortForPanelCensor(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedStatuses = $request->input('selected_statuses', []);
+        $sortField = $request->input('sort_field', 'publication_date');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($sortField === 'fio_or_name_region'){
+            $peopleContentForOpinions = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('people_contents.type','Opinion')
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('people_contents.title', 'like', "%{$search}%")
+                            ->orWhere('people_contents.sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('regions_and_peoples.fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('people_contents.publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('people_contents.publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('statuses.status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('statuses.status', '!=', 'Редактируется');
+                })
+                ->leftJoin('regions_and_peoples', 'people_contents.regions_and_peoples_id', '=', 'regions_and_peoples.id')
+                ->groupBy('people_contents.id', 'regions_and_peoples.id')
+                ->orderBy('regions_and_peoples.' . $sortField, $sortDirection)
+                ->select('people_contents.*')
+                ->get();
+        }
+        else{
+            $peopleContentForOpinions = PeopleContent::with(['status', 'regionsAndPeoples'])
+                ->where('type','Opinion')
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('sys_Comment', 'like', "%{$search}%")
+                            ->orWhereHas('regionsAndPeoples', function ($query) use ($search) {
+                                $query->where('fio_or_name_region', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('publication_date', '>=', $startDate);
+                })
+                ->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('publication_date', '<=', $endDate);
+                })
+                ->when(!empty($selectedStatuses), function ($query) use ($selectedStatuses) {
+                    $query->whereHas('status', function ($query) use ($selectedStatuses) {
+                        $query->whereIn('status', $selectedStatuses);
+                    });
+                })
+                ->whereHas('status', function ($query) {
+                    $query->where('status', '!=', 'Редактируется');
                 })
                 ->orderBy($sortField, $sortDirection)
                 ->get();
@@ -1594,6 +1790,151 @@ class PeopleContentController extends Controller
         }
     }
 
+    public function editInterviewCensor($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Interview'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($peopleContent->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $news->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->path_to_image = $request->input('path_to_image');
+        $peopleContent->title = $request->input('title');
+        $peopleContent->content = $request->input('content');
+        $peopleContent->source = $request->input('source');
+        $peopleContent->publication_date = $request->input('publication_date');
+        $peopleContent->sys_Comment = $request->input('sys_Comment');
+        $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $peopleContent->user_id = $user->id;
+        $peopleContent->status_id = $status->id;
+
+        $peopleContent->save();
+
+        $interview = MapperInterview::toInterview($peopleContent);
+
+        if ($is_status){
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview updated successfully',
+                'interview' => $interview,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
     public function editInterviewForCheck($id, Request $request){
         $user = Auth::guard('sanctum')->user();
 
@@ -1714,6 +2055,109 @@ class PeopleContentController extends Controller
         }
     }
 
+    public function editInterviewForCheckCensor($id, Request $request){
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Interview'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($peopleContent->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'source' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->path_to_image = $request->input('path_to_image');
+        $peopleContent->title = $request->input('title');
+        $peopleContent->content = $request->input('content');
+        $peopleContent->source = $request->input('source');
+        $peopleContent->publication_date = $request->input('publication_date');
+        $peopleContent->sys_Comment = $request->input('sys_Comment');
+        $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $peopleContent->user_id = $user->id;
+        $peopleContent->status_id = $status->id;
+
+        $peopleContent->save();
+
+        $interview = MapperInterview::toInterview($peopleContent);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Interview updated successfully',
+            'interview' => $interview,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function editOpinion($id, Request $request){
         $user = Auth::guard('sanctum')->user();
 
@@ -1818,6 +2262,149 @@ class PeopleContentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot edit opinion'
+            ], 403, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function editOpinionCensor($id, Request $request){
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Opinion'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Opinion not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $oldStatus = Status::find($peopleContent->status_id);
+
+        if (!$oldStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'status' => 'required|string|exists:statuses,status',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', $request->input('status'))->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $is_status = false;
+
+        if ($user->hasRole('editor') && !$user->hasRole('admin') && !$user->hasRole('super_admin') && $user->id == $news->user_id){
+            if ($status->order === 0){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                ]);
+            }
+        }
+        else if ($user->hasRole('admin') || $user->hasRole('super_admin')){
+            if ($status->order === 0 || $status->order === 1){
+                $is_status = StatusMatcher::isMatchingStatus($status, $oldStatus, [
+                    'Редактируется' => ['Снято с публикации', 'Ожидает подтверждения', 'Заблокировано'],
+                    'Ожидает подтверждения' => ['Редактируется'],
+                    'Снято с публикации' => ['Опубликовано'],
+                    'Опубликовано' => ['Ожидает подтверждения'],
+                    'Ожидает публикации' => ['Ожидает подтверждения'],
+                    'Заблокировано' => ['Редактируется', 'Ожидает подтверждения', 'Снято с публикации', 'Опубликовано', 'Ожидает публикации'],
+                ]);
+            }
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->path_to_image = $request->input('path_to_image');
+        $peopleContent->title = $request->input('title');
+        $peopleContent->content = $request->input('content');
+        $peopleContent->publication_date = $request->input('publication_date');
+        $peopleContent->sys_Comment = $request->input('sys_Comment');
+        $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $peopleContent->user_id = $user->id;
+        $peopleContent->status_id = $status->id;
+
+        $peopleContent->save();
+
+        $opinion = MapperOpinion::toOpinion($peopleContent);
+
+        if ($is_status){
+            return response()->json([
+                'success' => true,
+                'message' => 'Opinion updated successfully',
+                'opinion' => $opinion,
+            ], 200, [], JSON_UNESCAPED_UNICODE);
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit status'
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
     }
@@ -1938,6 +2525,107 @@ class PeopleContentController extends Controller
                 'message' => 'Cannot edit opinion'
             ], 403, [], JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    public function editOpinionForCheckCensor($id, Request $request){
+        $peopleContent = PeopleContent::find($id);
+
+        if (!$peopleContent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PeopleContent not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($peopleContent->type !== 'Opinion'){
+            return response()->json([
+                'success' => false,
+                'message' => 'Opinion not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::find($peopleContent->status_id);
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $rules = [
+            'path_to_image' => 'required|string',
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'publication_date' => 'required|date_format:Y-m-d',
+            'sys_Comment' => 'nullable|string',
+            'regions_and_peoples_id' => 'required|integer|exists:regions_and_peoples,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regionsAndPeoples = RegionsAndPeoples::find($request->input('regions_and_peoples_id'));
+
+        if (!$regionsAndPeoples) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Region and People record not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($regionsAndPeoples->type !== 'People') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid type. Expected "People".'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($request->input('user_id') != null && $request->input('user_id') != 0){
+            $user = User::where('id', $request->input('user_id'))->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $status = Status::where('status', 'Ожидает подтверждения')->first();
+
+        if (!$status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $peopleContent->path_to_image = $request->input('path_to_image');
+        $peopleContent->title = $request->input('title');
+        $peopleContent->content = $request->input('content');
+        $peopleContent->publication_date = $request->input('publication_date');
+        $peopleContent->sys_Comment = $request->input('sys_Comment');
+        $peopleContent->regions_and_peoples_id = $request->input('regions_and_peoples_id');
+        $peopleContent->user_id = $user->id;
+        $peopleContent->status_id = $status->id;
+
+        $peopleContent->save();
+
+        $opinion = MapperOpinion::toOpinion($peopleContent);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Opinion updated successfully',
+            'opinion' => $opinion,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function editPointView($id, Request $request){

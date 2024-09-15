@@ -242,10 +242,10 @@ class UserController extends Controller
         }
 
         if ($userAuth->hasRole('admin') && !$userAuth->hasRole('super_admin')){
-            if ($user->hasAnyRoles(['admin', 'super_admin'])) {
+            if ($user->hasRole('super_admin')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot edit user with admin or super_admin role'
+                    'message' => 'Cannot edit user with super_admin role'
                 ], 403, [], JSON_UNESCAPED_UNICODE);
             }
         }
@@ -303,6 +303,15 @@ class UserController extends Controller
     }
 
     public function editUserForRole($id, Request $request){
+        $userAuth = Auth::guard('sanctum')->user();
+
+        if (!$userAuth) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
         $user = User::find($id);
 
         if (!$user) {
@@ -310,6 +319,15 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User not found'
             ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($userAuth->hasRole('admin') && !$userAuth->hasRole('super_admin')){
+            if ($user->hasRole('super_admin') || in_array('super_admin', $request->input('roles', []))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot edit user with super_admin role'
+                ], 403, [], JSON_UNESCAPED_UNICODE);
+            }
         }
 
         $rules = [

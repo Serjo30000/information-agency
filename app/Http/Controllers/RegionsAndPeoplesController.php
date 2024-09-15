@@ -256,6 +256,92 @@ class RegionsAndPeoplesController extends Controller
         return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function allRegionsPaginateByFilterFederal(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regions = collect(FilterRegion::allRegionsByFilterFederal());
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $regions = $regions->filter(function($region) use ($startDate) {
+                return Carbon::parse($region->date_foundation)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $regions = $regions->filter(function($region) use ($endDate) {
+                return Carbon::parse($region->date_foundation)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $regions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $regions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function allRegionsPaginateByFilterNotFederal(Request $request)
+    {
+        $perPage = $request->input('per_page', 10);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $regions = collect(FilterRegion::allRegionsByFilterNotFederal());
+
+        if ($startDate) {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $regions = $regions->filter(function($region) use ($startDate) {
+                return Carbon::parse($region->date_foundation)->greaterThanOrEqualTo($startDate);
+            });
+        }
+
+        if ($endDate) {
+            $endDate = Carbon::parse($endDate)->endOfDay();
+            $regions = $regions->filter(function($region) use ($endDate) {
+                return Carbon::parse($region->date_foundation)->lessThanOrEqualTo($endDate);
+            });
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $regions->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $regions->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function allRegionsBySearchAndFiltersAndSortForPanel(Request $request)
     {
         $perPage = $request->input('per_page', 10);

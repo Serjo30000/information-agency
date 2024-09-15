@@ -16,6 +16,24 @@ class FilterRegion
         return $regions;
     }
 
+    public static function allRegionsByFilterFederal()
+    {
+        $regionsAndPeoples = RegionsAndPeoples::where('type', 'Region')->where('id', '>',0)->where('id', '<=',4)->get();
+        $regions = $regionsAndPeoples->map(function ($regionsAndPeople) {
+            return MapperRegion::toRegion($regionsAndPeople);
+        });
+        return $regions;
+    }
+
+    public static function allRegionsByFilterNotFederal()
+    {
+        $regionsAndPeoples = RegionsAndPeoples::where('type', 'Region')->where('id', '>',4)->get();
+        $regions = $regionsAndPeoples->map(function ($regionsAndPeople) {
+            return MapperRegion::toRegion($regionsAndPeople);
+        });
+        return $regions;
+    }
+
     public static function allRegionsByFilterAndSearch($searchTerm = null, $selectedRegions = [])
     {
         $query = RegionsAndPeoples::where('type', 'Region')->where('position_or_type_region','!=','ПГТ')->where('position_or_type_region','!=','Город')->where('position_or_type_region','!=','Страна');
