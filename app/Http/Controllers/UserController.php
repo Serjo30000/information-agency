@@ -370,4 +370,93 @@ class UserController extends Controller
             'roles' => $user->getRoleNames(),
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
+
+    public function editUserForFull($id, Request $request){
+        $userAuth = Auth::guard('sanctum')->user();
+
+        if (!$userAuth) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($userAuth->hasRole('admin') && !$userAuth->hasRole('super_admin')){
+            if ($user->hasRole('super_admin') || in_array('super_admin', $request->input('roles', []))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot edit user with super_admin role'
+                ], 403, [], JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        $rules = [
+            'login' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'login')->ignore($user->id),
+            ],
+            'password' => 'required|string|min:8|confirmed',
+            'fio' => ['required','string','max:255',new FullName()],
+            'phone' => ['required', 'string', 'max:15', Rule::unique('users', 'phone')->ignore($user->id), new PhoneNumber],
+            'sys_Comment' => 'nullable|string',
+            'roles' => 'required|array',
+            'roles.*' => 'string|exists:roles,name',
+            'delete_mark' => 'required|boolean',
+        ];
+
+        try {
+            $request->validate($rules);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed'
+            ], 422, [], JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($user->tokens()->count()>0){
+            $user->tokens()->delete();
+        }
+
+        $currentRoles = $user->getRoleNames()->toArray();
+
+        $requestedRoles = $request->input('roles');
+
+        $rolesToRemove = array_diff($currentRoles, $requestedRoles);
+
+        $rolesToAdd = array_diff($requestedRoles, $currentRoles);
+
+        foreach ($rolesToRemove as $role) {
+            $user->removeRole($role);
+        }
+
+        foreach ($rolesToAdd as $role) {
+            $user->assignRole($role);
+        }
+
+        $user->login = $request->input('login');
+        $user->password = $request->input('password');
+        $user->fio = $request->input('fio');
+        $user->phone = $request->input('phone');
+        $user->sys_Comment = $request->input('sys_Comment');
+        $user->delete_mark = $request->input('delete_mark');
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully',
+            'user' => $user,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
 }

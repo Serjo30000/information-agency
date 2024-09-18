@@ -41,6 +41,18 @@ class GrandNewsController extends Controller
         return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function listGrandNewsTopSix()
+    {
+        $grandNews = GrandNews::where('isActivate', true)
+            ->whereHas('news', function ($query) {
+                $query->whereHas('status', function ($statusQuery) {
+                    $statusQuery->where('status', 'Опубликовано');
+                });
+            })->with('news')->orderBy('priority', 'asc')->take(6)->get();
+
+        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function listGrandNewsTopTwenty()
     {
         $grandNews = GrandNews::where('isActivate', true)
@@ -174,12 +186,20 @@ class GrandNewsController extends Controller
 
     public function allGrandNewsBySearchAndFiltersAndStatusesAndSortAndIsActiveForPanel(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
         $sortDirection = $request->input('sort_direction', 'desc');
+
+        if ($perPage<=0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Paginate not found'
+            ], 404, [], JSON_UNESCAPED_UNICODE);
+        }
 
         $user = Auth::guard('sanctum')->user();
 
@@ -224,13 +244,26 @@ class GrandNewsController extends Controller
             ->select('grand_news.*')
             ->get();
 
-        return response()->json($grandNews, 200, [], JSON_UNESCAPED_UNICODE);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $grandNews->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedDTO = new LengthAwarePaginator(
+            $currentItems,
+            $grandNews->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginatedDTO, 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function allGrandNewsBySearchAndFiltersAndStatusesAndSortAndIsNotActiveForPanel(Request $request)
     {
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
         $currentDate = $request->input('current_date');
         $selectedStatuses = $request->input('selected_statuses', []);
         $sortField = $request->input('sort_field', 'publication_date');
@@ -254,7 +287,7 @@ class GrandNewsController extends Controller
 
         $grandNews = GrandNews::with(['news.regionsAndPeoples', 'news.status'])
             ->where('grand_news.isActivate', 0)
-            ->whereHas('news', function ($query) use ($user, $search, $currentDate, $selectedStatuses) {
+            ->whereHas('news', function ($query) use ($user, $search, $startDate, $endDate, $currentDate, $selectedStatuses) {
                 $query->where('news.user_id', $user->id);
                 if (!empty($selectedStatuses)) {
                     $query->whereHas('status', function ($query) use ($selectedStatuses) {
@@ -279,6 +312,13 @@ class GrandNewsController extends Controller
                     $query->whereYear('news.publication_date', $year)
                         ->whereMonth('news.publication_date', $month)
                         ->whereDay('news.publication_date', $day);
+                });
+                $query->when($startDate, function ($query, $startDate) {
+                    $query->whereDate('news.publication_date', '>=', $startDate);
+                });
+
+                $query->when($endDate, function ($query, $endDate) {
+                    $query->whereDate('news.publication_date', '<=', $endDate);
                 });
             })
             ->leftJoin('news', 'grand_news.news_id', '=', 'news.id')
